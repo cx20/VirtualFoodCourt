@@ -1,0 +1,15 @@
+# ビューア用にサンプル13本を複製したもの（約1.4MB）。
+# 元の *.js から機械的に作られる複製なので追跡しない。
+#   再生成: node tools/build.js
+assets/src/
+
+# Windows / エディタが勝手に作るもの
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Claude Code のローカル設定（セッションごとに増える。マシン固有）
+.claude/
+
+# エディタのローカル設定（ポート番号などマシン固有）
+.vscode/
