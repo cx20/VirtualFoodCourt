@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>コードに出てくる言葉 — たべもののつくりかた</title>
+<meta name="description" content="用語集">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html" aria-current="page">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-choco)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>用語集</p>
+<section class="chapter" id="terms" style="--ch:var(--p-choco)">
+  <div class="chapter-head">
+    <div class="chnum">用語<small>GLOSSARY</small></div>
+    <div>
+      <h2>コードに出てくる言葉</h2>
+      <p class="sub">最初の1周で引っかかりやすいものだけ</p>
+    </div>
+  </div>
+  <div class="body">
+    <input type="search" class="termsearch" id="termFilter" placeholder="言葉で絞り込む（例：法線、シード、焼き）">
+    <table id="termTable">
+      <tr><th>語</th><th>意味</th></tr>
+      <tr><td>メッシュ</td><td>頂点と三角形でできた立体そのもの。</td></tr>
+      <tr><td>頂点 / positions</td><td>点の座標。x,y,z の3つずつ一列に並べる。</td></tr>
+      <tr><td>indices</td><td>どの点とどの点で三角形を作るかの番号表。</td></tr>
+      <tr><td>法線 / normal</td><td>面がどちらを向いているかの矢印。明るさを決める（<a href="ch05.html">05章</a>）。</td></tr>
+      <tr><td>巻き順</td><td>三角形の頂点を並べる向き。表裏を決める。裏返ると立体が消える。</td></tr>
+      <tr><td>溶接 / weld</td><td>同じ場所にある頂点の法線を平均して揃えること。つなぎ目の線が消える。</td></tr>
+      <tr><td>UV</td><td>立体の表面と画像の座標の対応。u=横、v=縦（<a href="ch06.html">06章</a>）。</td></tr>
+      <tr><td>掃引 / sweep</td><td>断面を軸に沿って並べてつなぎ、立体にすること（<a href="ch10.html">10章</a>）。</td></tr>
+      <tr><td>スパイン / 軸</td><td>掃引するときの背骨になる曲線。ウィンナーの曲がりはこれ。</td></tr>
+      <tr><td>プロファイル / 断面</td><td>形の横顔。半径や高さの表（<a href="ch04.html">04章</a>）。</td></tr>
+      <tr><td>回転体</td><td>断面を軸のまわりに1周させて作る立体。団子・茶碗・クッキー。</td></tr>
+      <tr><td>スーパー楕円</td><td>指数 n で丸から四角まで連続に変わる輪郭。チョコの外形に使う。</td></tr>
+      <tr><td>SDF</td><td>その点が形の内か外か、境界からどれだけ離れているかを返す関数。トーストの輪郭。</td></tr>
+      <tr><td>シード</td><td>乱数の出発点になる整数。同じなら同じ結果（<a href="ch02.html">02章</a>）。</td></tr>
+      <tr><td>擬似乱数</td><td>計算で作る、規則があるのに規則が見えない数列。mulberry32 を使っている。</td></tr>
+      <tr><td>ノイズ</td><td>となり合う値がなめらかにつながる乱数。自然な模様のもと（<a href="ch03.html">03章</a>）。</td></tr>
+      <tr><td>fBm / オクターブ</td><td>細かさを半分ずつにしたノイズを重ねる手法。枚数をオクターブという。</td></tr>
+      <tr><td>セルノイズ</td><td>空間を細胞状に区切るノイズ。クッキーの割れ目に使う。</td></tr>
+      <tr><td>アルベド</td><td>影も光沢もない、素の色。</td></tr>
+      <tr><td>ORM</td><td>陰り・粗さ・金属度を R,G,B に詰めた1枚の画像。</td></tr>
+      <tr><td>粗さ / roughness</td><td>表面のざらつき。0 で鏡、1 で完全なつや消し。</td></tr>
+      <tr><td>PBR</td><td>現実の光の法則に沿った質感の表し方（<a href="ch07.html">07章</a>）。</td></tr>
+      <tr><td>クリアコート</td><td>表面にかかった透明な膜。たれ・水の膜・チョコの艶。</td></tr>
+      <tr><td>SSS / subSurface</td><td>光が中に入って散る現象。薄い部分が透ける（<a href="ch14.html">14章</a>）。</td></tr>
+      <tr><td>thickness テクスチャ</td><td>その点の厚みを焼いておいた画像。透け具合を決める。</td></tr>
+      <tr><td>sheen</td><td>布のように、縁がふわっと光る反射。かつお節や大根おろし。</td></tr>
+      <tr><td>iridescence / 虹彩</td><td>薄い膜の干渉で出る虹色。秋刀魚の銀は色素ではなくこれ。</td></tr>
+      <tr><td>法線マップ</td><td>細かい凹凸を、頂点を増やさず法線だけで表す画像。</td></tr>
+      <tr><td>視差 / parallax</td><td>法線マップより一歩進んで、見る角度で凹凸がずれて見える手法。</td></tr>
+      <tr><td>メイラード反応</td><td>焼き色がつく化学反応。熱が届いた所ほど濃い（<a href="ch12.html">12章</a>）。</td></tr>
+      <tr><td>吸収 / extinction</td><td>透明なものを光が通るとき、距離に応じて減る量。たれの色を決める（<a href="ch13.html">13章</a>）。</td></tr>
+      <tr><td>AO / アンビエントオクルージョン</td><td>狭い所や谷が暗くなる効果。</td></tr>
+      <tr><td>SSAO</td><td>画面上で隣り合う面から AO を推定する後処理。細かい谷には効かない。</td></tr>
+      <tr><td>焼き込み / bake</td><td>実行時に計算せず、あらかじめ求めてテクスチャや頂点色に入れておくこと。</td></tr>
+      <tr><td>インスタンス</td><td>同じ形を1個だけ作り、位置・向き・色を配って何百個も描く仕組み（<a href="ch09.html">09章</a>）。</td></tr>
+      <tr><td>頂点カラー</td><td>頂点そのものが持つ色。唐揚げの揚げ色はこれで焼いてある。</td></tr>
+      <tr><td>smin</td><td>なめらかな最小値。角を作らずに2つの形をつなぐ（<a href="ch16.html">16章</a>）。</td></tr>
+      <tr><td>凸包 / convex hull</td><td>でっぱりだけを包んだ袋のような形。物理の当たり判定に使う。</td></tr>
+      <tr><td>Havok</td><td>Babylon.js が使う物理エンジンの名前（<a href="ch08.html">08章</a>）。</td></tr>
+      <tr><td>緩和 / relaxation</td><td>重なりを少しずつ押し離す反復計算。物理を使わない配置に使う。</td></tr>
+      <tr><td>IBL</td><td>まわりの環境そのものを光として当てる方法（<a href="ch11.html">11章</a>）。</td></tr>
+      <tr><td>露出 / exposure</td><td>画面全体の明るさ。カメラの露出と同じ意味。</td></tr>
+      <tr><td>トーンマッピング</td><td>1 を超えた明るさを、切り落とさずになめらかに畳む変換。ACES を使う。</td></tr>
+      <tr><td>被写界深度</td><td>ピントの合う範囲。単位が m で計算されるので cm 系では 1000 を掛ける。</td></tr>
+      <tr><td>Playground</td><td>ブラウザ上で Babylon.js のコードを試せる公式サイト。</td></tr>
+    </table>
+    <div class="note">
+      ここに無い言葉は、たいていサンプルのコメントに説明があります。
+      <a href="view.html">ソースを読む</a>のページで、その語を含む行を探してみてください。
+    </div>
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="view.html"><span class="dir">← まえへ</span><span class="ttl">SRC サンプルのソースを読む</span></a>
+    <a class="next" href="index.html"><span class="dir">つぎへ →</span><span class="ttl">目次へ戻る</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

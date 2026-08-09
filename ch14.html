@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>透けないと、食べ物に見えない — たべもののつくりかた</title>
+<meta name="description" content="透けないと、食べ物に見えない">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html" aria-current="page">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-sakura)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第14章</p>
+<section class="chapter" id="ch14" style="--ch:var(--p-sakura)">
+  <div class="chapter-head">
+    <div class="chnum">14<small>Translucency</small></div>
+    <div>
+      <h2>透けないと、食べ物に見えない</h2>
+      <p class="sub">subsurface scattering — 光が中に入って散る</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>団子の透けを切ると<b>石膏</b>に、赤身の透けを切ると<b>赤く塗った消しゴム</b>になります。</li>
+        <li>光は表面で全部はね返るのではなく、中に入って散ってから出てきます。</li>
+        <li>薄いところほど多く抜けるので、<b>厚みの情報</b>を持たせるのが要点です。</li>
+      </ul>
+    </div>
+
+    <p>
+      食べ物のほとんどは、多かれ少なかれ光を通します。
+      上新粉の生地、白玉、マグロの赤身、大根おろし、レモン、米粒、鮭の身。
+      光が表面で全部はね返るのは金属だけで、
+      食べ物では<b>いったん中に入り、何度か散らばってから、別のところから出てきます</b>。
+      これを subsurface scattering（表面下散乱、SSS）といいます。
+    </p>
+    <p>
+      これが見た目にどう出るかというと、<b>逆光になったときの縁</b>です。
+      光を後ろから当てると、薄い部分だけが明るく透けます。
+      団子の輪郭がふわっと白く光り、赤身の縁が赤く抜ける。
+      料理写真が斜め後ろから光を当てるのは、これを見せるためです（→ <a href="ch11.html">11章</a>）。
+    </p>
+
+    <div class="lab" id="lab14">
+      <p class="lab-title">実験 — 透けを切る / 光を後ろへ回す</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="sssPreset">
+            <button class="chip" type="button" data-v="dango" aria-pressed="true">白玉</button>
+            <button class="chip" type="button" data-v="akami">赤身</button>
+            <button class="chip" type="button" data-v="rice">米粒</button>
+          </div>
+          <div class="ctrl">
+            <label for="sssAmt">透けの強さ<span class="v" id="sssAmtV">0.45</span></label>
+            <input type="range" id="sssAmt" min="0" max="1" step="0.01" value="0.45">
+          </div>
+          <div class="ctrl">
+            <label for="sssBack">光の向き（逆光へ）<span class="v" id="sssBackV">40°</span></label>
+            <input type="range" id="sssBack" min="-30" max="160" step="1" value="40">
+          </div>
+          <div class="readout" id="sssOut">—</div>
+        </div>
+        <canvas id="sssCanvas" width="640" height="360" aria-label="透けの強さと光の向きを変える実験"></canvas>
+      </div>
+      <p class="hint">
+        透けを 0 にすると、光をどこから当てても縁が抜けません。
+        白玉が石膏に、赤身が消しゴムに見えるのはそのためです。
+      </p>
+    </div>
+
+    <h3>厚みを、どうやって知るか</h3>
+    <p>
+      「薄いところほど透ける」を実装するには、その点の<b>厚み</b>が必要です。
+      ところが3Dの表面には厚みの情報がありません。そこで、あらかじめ計算して
+      テクスチャに焼いておきます。これを thickness テクスチャといいます。
+    </p>
+    <figure>
+<pre><span class="c">// 3. TextureLab : 厚みを焼く（ご飯.js の米粒）
+// 米粒は中心が厚く、縁と両端が薄い。単純な形なら式で書ける</span>
+<span class="k">const</span> th = Math.sqrt(Math.max(<span class="n">0</span>, <span class="n">1</span> - rr)) * (<span class="n">1</span> - <span class="n">0.35</span> * endFade);
+mat.subSurface.thicknessTexture = bake(th);
+mat.subSurface.isTranslucencyEnabled = <span class="k">true</span>;
+mat.subSurface.translucencyIntensity = <span class="n">0.45</span>;</pre>
+      <figcaption>形が複雑な場合は、内側へレイを飛ばして距離を測る方法もある</figcaption>
+    </figure>
+
+    <h3>散る色は、素の色とは違う</h3>
+    <p>
+      中を通ってきた光は、素の色そのままでは出てきません。
+      赤身なら、より赤く、より暗く。白玉なら、わずかに黄味を帯びて。
+      だから SSS には、アルベドとは別に<b>散乱の色（tint）</b>を持たせます。
+    </p>
+    <p>
+      お寿司.js の赤身は、この色を <code>[0.560, 0.088, 0.098]</code>（深い深紅）に取っています。
+      表面の色より濃い。「光を通すと明るくなる」のではなく、
+      <b>光を通すと、その材質の色が濃く出る</b>のが正しい方向です。
+    </p>
+
+    <h3>切り身は「表面」ではなく「切り口」</h3>
+    <p>
+      お寿司.js のコメントに、この章と関係の深い一節があります。
+    </p>
+    <div class="note">
+      <b>「見えているのは『表面』ではなく『包丁で切った断面』。
+      模様は表面の汚れではなく、筋肉の束と脂の層が切られた切り口」</b>
+    </div>
+    <p>
+      野菜の皮や、たこ焼きの生地は<b>外側</b>です。ところが刺身や鮭の切り身は、
+      内部構造がむき出しになっています。だから模様の作り方が変わります。
+      筋肉の束（筋節）が斜めに走る場を作り、それを切った断面を模様にする。
+      鮭の白い筋（ミオコンマ）が「く」の字に並ぶのは、そのためです。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>霜降りは色ではなく実体です。</b>
+      アルベドに白い線を描いただけだと、印刷したステッカーになります。
+      脂は肉より白く、やわらかく、<b>わずかに盛り上がって光る</b>。
+      法線と粗さも一緒に変えないと霜降りになりません。</p>
+      <p><b>透けを強くしすぎると、光る風船になります。</b>
+      subSurface は「ぼんやり光る」ので、上げるほど良く見えがちです。
+      13本のサンプルの値はだいたい 0.2〜0.5 で、1.0 に近い値はどこにもありません。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「白玉」で透けを 0 にして、何に見えるか言葉にする。</li>
+        <li>光の向きを 160°（真後ろ）にして、透けの有無を見比べる。</li>
+        <li>「赤身」で透けを 1.0 にすると、どこから食べ物でなくなるか探す。</li>
+        <li>お寿司.js で「透」を検索し、赤身・中トロ・大トロで値がどう違うか比べる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch13.html"><span class="dir">← まえの章</span><span class="ttl">13 たれは、色ではなく層</span></a>
+    <a class="next" href="ch15.html"><span class="dir">つぎの章 →</span><span class="ttl">15 粒を1400個置いて、谷を暗くする</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

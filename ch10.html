@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>曲がったものを作る — たべもののつくりかた</title>
+<meta name="description" content="曲がったものを作る">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html" aria-current="page">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-salmon)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第10章</p>
+<section class="chapter" id="ch10" style="--ch:var(--p-salmon)">
+  <div class="chapter-head">
+    <div class="chnum">10<small>Sweep</small></div>
+    <div>
+      <h2>曲がったものを作る</h2>
+      <p class="sub">sweep along a spine — 軸に沿った掃引</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ウィンナーも秋刀魚も、まっすぐではありません。ゆるく<b>弓なり</b>に曲がっています。</li>
+        <li>回転体では作れないので、先に<b>軸（背骨）</b>を決め、断面を軸に垂直に置いていきます。</li>
+        <li>軸に垂直な向きを取り違えると、断面がねじれて<b>メビウスの輪</b>になります。</li>
+      </ul>
+    </div>
+
+    <p>
+      ウィンナーを回転体で作ると、まっすぐな棒になります。実物はまっすぐではありません。
+      ケーシングに詰めるときの押し具合で、ゆるく弓なりに曲がり、太さも長手方向に ±4% ほどうねります。
+      これが無いと、オレンジ色の棒にしか見えません。
+    </p>
+    <p>
+      そこで作り方を変えます。まず<b>軸（スパイン）</b>を1本決めます。
+      次に、軸上の各点で「そこでの断面」を作り、<b>軸に垂直な平面の上に</b>置きます。
+      これを軸に沿って何十枚も並べ、隣どうしをつなげば立体になります。これを<b>掃引</b>といいます。
+    </p>
+    <figure>
+<pre><span class="c">// 3. Mesh utils : 掃引（ウィンナー.js / 焼き魚（サンマ）.js に共通）</span>
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt;= NS; i++) {
+    <span class="k">const</span> u = i / NS;
+    <span class="k">const</span> c = spine(u);           <span class="c">// 軸の上の点</span>
+    <span class="k">const</span> T = normalize(dSpine(u)); <span class="c">// 進行方向（接線）</span>
+    <span class="k">const</span> N = normalize(cross(T, UP));
+    <span class="k">const</span> B = cross(N, T);         <span class="c">// この2本が断面の平面をつくる</span>
+    <span class="k">for</span> (<span class="k">let</span> j = <span class="n">0</span>; j &lt;= NC; j++) {
+        <span class="k">const</span> a = j / NC * TAU;
+        <span class="k">const</span> r = section(u, a);
+        push(c + N * (r * Math.cos(a)) + B * (r * Math.sin(a)));
+    }
+}</pre>
+      <figcaption>断面は円とは限らない。秋刀魚は「横倒しにした平たい楕円」</figcaption>
+    </figure>
+
+    <div class="lab" id="lab10">
+      <p class="lab-title">実験 — 軸を曲げて、断面を並べる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="sweepShape">
+            <button class="chip" type="button" data-v="wiener" aria-pressed="true">ウィンナー</button>
+            <button class="chip" type="button" data-v="sanma">秋刀魚</button>
+          </div>
+          <div class="ctrl">
+            <label for="sweepBend">曲がり<span class="v" id="sweepBendV">0.06</span></label>
+            <input type="range" id="sweepBend" min="0" max="0.30" step="0.005" value="0.06">
+          </div>
+          <div class="ctrl">
+            <label for="sweepPlump">太さのうねり<span class="v" id="sweepPlumpV">0.06</span></label>
+            <input type="range" id="sweepPlump" min="0" max="0.25" step="0.005" value="0.06">
+          </div>
+          <div class="ctrl">
+            <label for="sweepFlat">断面のひらたさ<span class="v" id="sweepFlatV">1.00</span></label>
+            <input type="range" id="sweepFlat" min="0.35" max="1" step="0.01" value="1">
+          </div>
+          <label class="switch"><input type="checkbox" id="sweepRing">断面の輪を描く</label>
+        </div>
+        <canvas id="sweepCanvas" width="640" height="360" aria-label="軸を曲げて断面を掃引する実験"></canvas>
+      </div>
+      <p class="hint">
+        「断面の輪を描く」を押すと、軸に垂直な平面が何枚も並んでいるのが見えます。
+        秋刀魚は断面のひらたさを 0.6 くらいにすると、それらしくなります。
+      </p>
+    </div>
+
+    <h3>両端は、半球ではない</h3>
+    <p>
+      掃引で作った筒の両端を、そのまま半球で閉じたくなります。ウィンナーではこれが失敗します。
+      実物の端には<b>ケーシングをねじって留めた結び目</b>があり、そこへ向かって放射状のひだが収束しています。
+      ウィンナー.js のコメントに「この数mmが最も『らしさ』を出す」とあります。
+      全体の 3% に満たない部分に、いちばん手間がかかっています。
+    </p>
+
+    <h3>体型のピークをどこに置くか</h3>
+    <p>
+      秋刀魚は全長 30cm に対して体高 4cm。極端に細長い魚です。
+      焼き魚（サンマ）.js の修正記録には、
+      <b>「体高のピークが u=0.30 にあり、頭が全長の1/3に見えていた。実写は鰓蓋直後 u≒0.22」</b>
+      とあります。0.30 を 0.22 にずらしただけで、別の魚が秋刀魚になる。
+      掃引で作る形は、<b>軸方向のどこに何を置くか</b>がほとんどすべてです。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>断面の向きは、勝手に決まってくれません。</b>
+      軸に垂直な平面は無数の回り方ができます。上のコードのように
+      「毎回 UP との外積で決める」やり方は簡単ですが、
+      軸が真上を向いた瞬間に外積が 0 になって破綻します。
+      軸が大きく曲がる形では、前の断面の向きを引き継ぐ方法（平行移動枠）を使います。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>曲がりを 0 にして、ウィンナーが何に見えるか判定する。</li>
+        <li>太さのうねりを 0.25 にすると何に見えるか（ひょうたん）を確かめる。</li>
+        <li>「秋刀魚」で断面のひらたさを 1.00 のままにすると、どんな魚に見えるか。</li>
+        <li>ウィンナー.js で「結び目」を検索し、端の処理に何行使っているか数える。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch09.html"><span class="dir">← まえの章</span><span class="ttl">09 部品を作って、たくさん並べる</span></a>
+    <a class="next" href="ch11.html"><span class="dir">つぎの章 →</span><span class="ttl">11 見せ方を決める（光と露出）</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

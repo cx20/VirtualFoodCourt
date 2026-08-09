@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>触れ合うと、潰れる — たべもののつくりかた</title>
+<meta name="description" content="触れ合うと、潰れる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html" aria-current="page">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-yomogi)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第16章</p>
+<section class="chapter" id="ch16" style="--ch:var(--p-yomogi)">
+  <div class="chapter-head">
+    <div class="chnum">16<small>Contact</small></div>
+    <div>
+      <h2>触れ合うと、潰れる</h2>
+      <p class="sub">contact deformation — やわらかい物の積み方</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>団子を真球のまま積むと、<b>発泡スチロールの球</b>に見えます。</li>
+        <li>自重と押し合いで、接するところが平らになる。下の段ほど潰れます。</li>
+        <li>潰した<b>体積の行き先</b>と、接触の縁にできる<b>丸い土手</b>が、やわらかさの正体です。</li>
+      </ul>
+    </div>
+
+    <p>
+      月見団子は15個を三方に積みます（9 + 4 + 2）。
+      球を15個並べて終わり、にはなりません。月見団子.js の冒頭にこうあります。
+    </p>
+    <div class="note">
+      <b>「月見団子は球ではない。自重と隣どうしの押し合いで、接する所が平らになる。
+      下の段ほど潰れ、上へ行くほど丸い。真球のまま積むと発泡スチロールに見える」</b>
+    </div>
+    <p>
+      平らにするだけなら簡単です。接触面の側を切り落とせばよい。
+      ところが、それだけでは<b>やせた球</b>になります。餅は非圧縮なので、
+      押されて減った体積はどこかへ行かなければいけません。
+      行き先は、押されていない自由な面です。つまり<b>他の方向がその分ふくらむ</b>。
+    </p>
+    <figure>
+<pre><span class="c">// 方向ごとの半径を smin で丸める（＝縁に土手のある柔らかい接触）</span>
+<span class="k">let</span> r = R;
+<span class="k">for</span> (<span class="k">const</span> c of contacts) {
+    <span class="k">const</span> d = dot(dir, c.n);
+    <span class="k">if</span> (d &gt; <span class="n">0</span>) r = smin(r, c.dist / d, <span class="n">0.18</span>);  <span class="c">// なめらかな最小値</span>
+}
+<span class="c">// 切り取った球冠の体積ぶんだけ全体を膨らませる（餅は非圧縮）</span>
+r *= <span class="n">1</span> + volumeLoss * <span class="n">0.33</span>;</pre>
+      <figcaption>月見団子.js。smin（多項式スムーズ最小値）が「丸い土手」を作る</figcaption>
+    </figure>
+
+    <div class="lab" id="lab16">
+      <p class="lab-title">実験 — 潰す / 体積を戻す / 土手をつける</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="squashAmt">潰し量<span class="v" id="squashAmtV">0.30</span></label>
+            <input type="range" id="squashAmt" min="0" max="0.6" step="0.01" value="0.3">
+          </div>
+          <label class="switch"><input type="checkbox" id="squashVol" checked>減った体積を戻す</label>
+          <label class="switch"><input type="checkbox" id="squashRim" checked>接触の縁を丸める（土手）</label>
+          <label class="switch"><input type="checkbox" id="squashStack" checked>下の段ほど強く潰す</label>
+          <div class="readout" id="squashOut">—</div>
+        </div>
+        <canvas id="squashCanvas" width="640" height="360" aria-label="団子を積んで接触面で潰す実験"></canvas>
+      </div>
+      <p class="hint">
+        3つのスイッチを全部切ると、ただの球の山になります。
+        1つずつ入れていくと、どれがどれだけ効いているかが分かります。
+      </p>
+    </div>
+
+    <h3>なめらかな最小値（smin）</h3>
+    <p>
+      接触面を作るには「球の半径」と「接触面までの距離」の小さいほうを取ればよい。
+      ただし <code>Math.min</code> をそのまま使うと、境目に<b>鋭い角</b>ができます。
+      実物の団子には角がありません。わずかに丸い土手ができて、そこに細い影の線が入ります。
+    </p>
+    <figure>
+<pre><span class="c">// 多項式スムーズ最小値。k のぶんだけ、境目が丸くつながる</span>
+<span class="k">const</span> smin = (a, b, k) =&gt; {
+    <span class="k">const</span> h = Math.max(<span class="n">0</span>, k - Math.abs(a - b)) / k;
+    <span class="k">return</span> Math.min(a, b) - h * h * k * <span class="n">0.25</span>;
+};</pre>
+      <figcaption>この1行が、硬い球とやわらかい餅を分ける</figcaption>
+    </figure>
+
+    <h3>串は、団子の中心を通っていない</h3>
+    <p>
+      花見団子は同じ問題を、別の向きで扱っています。
+      串の方向に押しつぶされ、隣と接する両端が平らになる。
+      直径 3.0cm に対して串方向は約 2.4cm、接触面の直径は約 1.2cm。
+      さらに、
+    </p>
+    <ul>
+      <li>串の入口は生地が引き込まれて<b>すり鉢状にへこむ</b>（平らだと刺さって見えない）</li>
+      <li>団子は串の<b>中心に乗っていない</b>。わずかに偏心している</li>
+      <li>隣どうしは「めり込む」のではなく、<b>平らな面が触れて細い影の線</b>ができる</li>
+    </ul>
+    <p>
+      どれも数ミリの話です。ところが、この数ミリを入れるかどうかで、
+      「色つきの球に棒」か「団子」かが決まります。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>潰す方向を1つに決めないでください。</b>
+      下の段の団子は、下から（台）・横から（隣）・上から（上の段）の3方向に押されています。
+      「上下だけ潰す」と、上から見たときに真円のままなので嘘が見えます。
+      月見団子.js は接触を全部集めてから、方向ごとに半径を決めています。</p>
+      <p><b>体積を戻しすぎると、風船になります。</b>
+      係数 0.33 は「戻しすぎない」ための値です。実際の餅は多少水分が逃げるので、
+      きっちり保存するより少なめのほうが自然に見えます。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>3つのスイッチを全部切って、球の山に戻してみる。</li>
+        <li>「減った体積を戻す」だけを入れて、シルエットがどう変わるか見る。</li>
+        <li>潰し量を 0.6 にすると、どこから餅でなくなるか探す。</li>
+        <li>月見団子.js で smin を検索し、k の値がいくつになっているか調べる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch15.html"><span class="dir">← まえの章</span><span class="ttl">15 粒を1400個置いて、谷を暗くする</span></a>
+    <a class="next" href="ch17.html"><span class="dir">つぎの章 →</span><span class="ttl">17 「似ているのに別物」を作り分ける</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

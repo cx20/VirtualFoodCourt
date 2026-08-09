@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>焼きムラは、なめらかな乱数でできている — たべもののつくりかた</title>
+<meta name="description" content="焼きムラは、なめらかな乱数でできている">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html" aria-current="page">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-cookie)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第03章</p>
+<section class="chapter" id="ch03" style="--ch:var(--p-cookie)">
+  <div class="chapter-head">
+    <div class="chnum">03<small>Noise</small></div>
+    <div>
+      <h2>焼きムラは、なめらかな乱数でできている</h2>
+      <p class="sub">value noise / fBm — 値ノイズと重ね合わせ</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ふつうの乱数は<b>となりと無関係</b>なので、そのまま模様にすると砂嵐になります。</li>
+        <li>格子の点にだけ乱数を置いて、あいだをなめらかにつなぐ。これが<b>値ノイズ</b>です。</li>
+        <li>細かさを半分ずつにして何枚も重ねると（<b>fBm</b>）、焼きムラや生地の肌理になります。</li>
+      </ul>
+    </div>
+
+    <p>
+      トーストの焼き色を、1ピクセルごとに <code>rnd()</code> で決めたらどうなるか。
+      白と茶色の点が入り乱れた砂嵐になります。実物の焼きムラは、
+      <b>濃いところの隣はだいたい濃い</b>。となり合う値がつながっていないといけません。
+    </p>
+    <p>
+      そこで、まず大きな格子を用意し、<b>格子の交点にだけ乱数を置きます</b>。
+      あいだの場所は、四隅の値を混ぜて求める。ただの直線で混ぜると格子が四角く見えてしまうので、
+      混ぜ具合を <code>t·t·(3−2t)</code> というなめらかな曲線（スムーズステップ）に通します。
+      これで、格子の形が見えない、なめらかな乱数の面ができます。
+    </p>
+    <figure>
+<pre><span class="c">// 2. Noise : 2D値ノイズ</span>
+<span class="k">const</span> v2 = (x, y, seed) =&gt; {
+    <span class="k">const</span> xi = Math.floor(x), yi = Math.floor(y);
+    <span class="k">const</span> xf = x - xi,        yf = y - yi;
+    <span class="c">// 直線ではなく S 字で混ぜる。格子の目が見えなくなる</span>
+    <span class="k">const</span> u = xf * xf * (<span class="n">3</span> - <span class="n">2</span> * xf);
+    <span class="k">const</span> v = yf * yf * (<span class="n">3</span> - <span class="n">2</span> * yf);
+    <span class="k">const</span> a = h2(xi, yi, seed),     b = h2(xi + <span class="n">1</span>, yi, seed);
+    <span class="k">const</span> c = h2(xi, yi + <span class="n">1</span>, seed), d = h2(xi + <span class="n">1</span>, yi + <span class="n">1</span>, seed);
+    <span class="k">return</span> mix(mix(a, b, u), mix(c, d, u), v);
+};</pre>
+      <figcaption>13本すべてに、ほぼこの形で入っている</figcaption>
+    </figure>
+
+    <h3>1枚では足りない。だから重ねる</h3>
+    <p>
+      値ノイズを1枚だけ使うと、雲のようにぼんやりしたムラにしかなりません。
+      実物の焼きムラは、<b>大きな濃淡の中に細かい斑があって、その中にもっと細かい粒がある</b>。
+      そこで、細かさを2倍にして高さを半分にしたものを何枚も足します。
+      これを <b>fBm</b>（fractional Brownian motion／非整数ブラウン運動）と呼びます。
+      枚数のことを<b>オクターブ</b>といいます。
+    </p>
+    <figure>
+<pre><span class="k">const</span> fbm = (x, y, seed, oct) =&gt; {
+    <span class="k">let</span> s = <span class="n">0</span>, a = <span class="n">0.5</span>, f = <span class="n">1</span>, n = <span class="n">0</span>;
+    <span class="k">for</span> (<span class="k">let</span> o = <span class="n">0</span>; o &lt; oct; o++) {
+        s += a * v2(x * f, y * f, seed + o * <span class="n">131</span>);
+        n += a;
+        f *= <span class="n">2</span>;    <span class="c">// 細かさは2倍</span>
+        a *= <span class="n">0.5</span>;  <span class="c">// 効き目は半分</span>
+    }
+    <span class="k">return</span> s / n;
+};</pre>
+      <figcaption>オクターブを増やすほど細かい粒が乗る。4〜6枚でだいたい足りる</figcaption>
+    </figure>
+
+    <div class="lab" id="lab03">
+      <p class="lab-title">実験 — オクターブを重ねる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="noiseScale">大きさ（格子の粗さ）<span class="v" id="noiseScaleV">4.0</span></label>
+            <input type="range" id="noiseScale" min="1" max="14" step="0.5" value="4">
+          </div>
+          <div class="ctrl">
+            <label for="noiseOct">オクターブ（重ねる枚数）<span class="v" id="noiseOctV">1</span></label>
+            <input type="range" id="noiseOct" min="1" max="6" step="1" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="noiseGain">減り方（次の枚の効き目）<span class="v" id="noiseGainV">0.50</span></label>
+            <input type="range" id="noiseGain" min="0.2" max="0.85" step="0.01" value="0.5">
+          </div>
+          <div class="chips" id="noiseUse">
+            <button class="chip" type="button" data-v="raw" aria-pressed="true">生の値</button>
+            <button class="chip" type="button" data-v="bake">焼き色にする</button>
+            <button class="chip" type="button" data-v="pore">す（気泡）にする</button>
+          </div>
+        </div>
+        <canvas id="noiseCanvas" width="640" height="330" aria-label="ノイズのオクターブを重ねる実験"></canvas>
+      </div>
+      <p class="hint">
+        左が乱数そのもの（となりと無関係）、右が値ノイズ。
+        「焼き色にする」を押すと、同じノイズがトーストの焼きムラに化けます。
+      </p>
+    </div>
+
+    <h3>ぐるっと一周してつながるノイズ</h3>
+    <p>
+      ウィンナーや秋刀魚のように<b>筒の表面に模様を巻く</b>とき、
+      ふつうのノイズを使うと、一周して戻ってきたところで模様が切れて縦の線が入ります。
+      そこで、横方向（u）だけ格子の番号を周期で折り返した専用のノイズを使います。
+      13本のうち筒状のものには、必ずこの <code>v2u</code> が入っています。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>fBm の平均は 0.5 のあたりに集まります。</b>
+      オクターブを重ねるほど、極端な値（0 に近い／1 に近い）は出にくくなります。
+      「しきい値 0.8 以上を焦げにする」と書いたのに焦げが1点も出ない、というのはこれが原因です。
+      焼き魚（サンマ）.js には、しきい値を実際の分布に合わせ直した記録が残っています。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>オクターブを1から6まで動かし、どこから「焼きムラらしく」見えるか決める。</li>
+        <li>減り方を 0.85 にすると何が起きるか観察する（細かい粒が消えないので砂っぽくなる）。</li>
+        <li>「焼き色にする」で、大きさを 1 と 14 にしたときの見え方の違いを言葉にする。</li>
+        <li>トースト.js の中で fbm を呼んでいる箇所を全部探し、それぞれ何に使っているか書き出す。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch02.html"><span class="dir">← まえの章</span><span class="ttl">02 同じ種からは、同じ料理ができる</span></a>
+    <a class="next" href="ch04.html"><span class="dir">つぎの章 →</span><span class="ttl">04 断面を1枚描けば、立体になる</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

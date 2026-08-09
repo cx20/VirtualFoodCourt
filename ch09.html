@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>部品を作って、たくさん並べる — たべもののつくりかた</title>
+<meta name="description" content="部品を作って、たくさん並べる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html" aria-current="page">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-sauce)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第09章</p>
+<section class="chapter" id="ch09" style="--ch:var(--p-sauce)">
+  <div class="chapter-head">
+    <div class="chnum">09<small>Parts</small></div>
+    <div>
+      <h2>部品を作って、たくさん並べる</h2>
+      <p class="sub">instancing / scattering — 実体としてのトッピング</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>青のり・かつお節・砂糖粒・ごま。<b>絵に描くと消えます</b>。実体として置く必要があります。</li>
+        <li>同じ部品を何百個も置くときは<b>インスタンス</b>を使い、1個ぶんの形を使い回します。</li>
+        <li>置いたあとに<b>重なりをほぐす</b>。均等に並べると、ふりかけたようには見えません。</li>
+      </ul>
+    </div>
+
+    <p>
+      たこ焼きの上に青のりをかけます。テクスチャに緑の点を描けばよさそうですが、
+      これは失敗します。1mm の粒は、少し離れるとミップマップ（縮小版の画像）で溶けて
+      <b>緑がかった靄</b>になります。粉を「ふりかけた」ように見せられるのは、実体のかけらだけです。
+    </p>
+    <p>
+      そこで、板ポリゴン（四角い板を1枚）を青のりの形に切り抜いて、何百枚も撒きます。
+      同じことを、かつお節（薄く曲がった板）、砂糖粒（小さな多面体）、
+      ごま、チョコチップ（小さな円錐）でもやっています。
+    </p>
+
+    <h3>インスタンス — 形は1個ぶんだけ作る</h3>
+    <p>
+      500枚の板を1枚ずつ作ると、頂点の配列も500個ぶん要ります。
+      そこで、形は1個だけ作り、<b>位置・向き・大きさ・色だけを500個ぶん持つ</b>。
+      これがインスタンスです。GPU 側は「同じ形を、行列を差し替えながら500回描く」だけになります。
+    </p>
+    <figure>
+<pre><span class="c">// 1枚だけ作って、あとは行列で配る</span>
+<span class="k">const</span> flake = makeFlakeMesh(scene);
+flake.thinInstanceSetBuffer(<span class="s">"matrix"</span>, matrices, <span class="n">16</span>);
+<span class="c">// 個体ごとの色は、頂点色ではなくインスタンスの色として渡す</span>
+flake.thinInstanceSetBuffer(<span class="s">"color"</span>, colors, <span class="n">4</span>);</pre>
+      <figcaption>ご飯.js は約1400粒の米をこの方法で置いている（→ <a href="ch15.html">15章</a>）</figcaption>
+    </figure>
+
+    <div class="lab" id="lab09">
+      <p class="lab-title">実験 — トッピングを撒いて、重なりをほぐす</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="scatterN">枚数<span class="v" id="scatterNV">90</span></label>
+            <input type="range" id="scatterN" min="10" max="260" step="5" value="90">
+          </div>
+          <div class="ctrl">
+            <label for="scatterIter">ほぐす回数<span class="v" id="scatterIterV">0</span></label>
+            <input type="range" id="scatterIter" min="0" max="30" step="1" value="0">
+          </div>
+          <div class="chips" id="scatterMode">
+            <button class="chip" type="button" data-v="random" aria-pressed="true">乱数で撒く</button>
+            <button class="chip" type="button" data-v="grid">格子に並べる</button>
+          </div>
+          <div class="readout" id="scatterOut">—</div>
+        </div>
+        <canvas id="scatterCanvas" width="640" height="360" aria-label="トッピングを撒いて重なりをほぐす実験"></canvas>
+      </div>
+      <p class="hint">
+        「格子に並べる」は、重なりがゼロなのに一目で嘘と分かります。
+        乱数で撒いてから少しだけほぐす、が実物に近い落としどころです。
+      </p>
+    </div>
+
+    <h3>重なりをほぐす</h3>
+    <p>
+      乱数で撒くと、必ず何枚かが同じ場所に重なります。重なった2枚は、
+      光の当たり方が同じになるので<b>1枚の濃い染みに見えます</b>。
+      そこで、近すぎる組を見つけて、離れる方向に少しずつ動かす操作を何回かくり返します。
+    </p>
+    <p>
+      ここで大事なのは<b>やりすぎないこと</b>です。ほぐしきると格子になり、
+      「ふりかけた」ではなく「並べた」に戻ってしまいます。
+      上の実験でほぐす回数を 30 まで上げると、それが見えます。
+    </p>
+
+    <h3>粒を、模様ではなく実体で作る判断</h3>
+    <p>
+      どこまでを実体で作り、どこからをテクスチャで済ませるか。
+      13本のサンプルは、だいたい次の基準で分けています。
+    </p>
+    <table>
+      <tr><th>大きさ</th><th>やり方</th><th>例</th></tr>
+      <tr><td>数 mm 以上</td><td>実体のメッシュ。シルエットに出る</td><td>米粒・チョコチップ・レモン・大根おろし</td></tr>
+      <tr><td>1〜3mm</td><td>板ポリゴン（かけら）。輪郭は要るが厚みは要らない</td><td>青のり・かつお節・大葉</td></tr>
+      <tr><td>1mm 未満</td><td>法線マップとアルベド。凹凸だけ嘘をつく</td><td>衣の粒立ち・砂糖の細粒・す（気泡）の底</td></tr>
+    </table>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>板ポリゴンは、裏から見ると消えます。</b>
+      片面しか描かない設定のままだと、撒いたかけらの半分が見えなくなります。
+      両面描画（<code>backFaceCulling = false</code>）にするか、
+      裏返っているものを作るときに向きを揃えます。</p>
+      <p><b>影を落とす対象に入れると、一気に重くなります。</b>
+      500枚のかけら全部に影を計算させる必要はありません。
+      大きいものだけ影を持たせ、小さいかけらは外します。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>枚数を 260 にして、ほぐす回数 0 と 10 を見比べる。</li>
+        <li>「格子に並べる」に切り替え、なぜ嘘に見えるのか1行で書く。</li>
+        <li>ほぐす回数を 30 にして、格子とどれくらい似てくるか観察する。</li>
+        <li>たこ焼き.js で「青のり」を検索し、何枚撒いているか調べる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch08.html"><span class="dir">← まえの章</span><span class="ttl">08 盛り付けは、手で置かない</span></a>
+    <a class="next" href="ch10.html"><span class="dir">つぎの章 →</span><span class="ttl">10 曲がったものを作る</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

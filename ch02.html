@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>同じ種からは、同じ料理ができる — たべもののつくりかた</title>
+<meta name="description" content="同じ種からは、同じ料理ができる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html" aria-current="page">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-wiener)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第02章</p>
+<section class="chapter" id="ch02" style="--ch:var(--p-wiener)">
+  <div class="chapter-head">
+    <div class="chnum">02<small>Rng</small></div>
+    <div>
+      <h2>同じ種からは、同じ料理ができる</h2>
+      <p class="sub">seeded pseudo random — シード付き擬似乱数</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>全13本とも <code>Math.random()</code> を使っていません。代わりに<b>自分で乱数を書いて</b>います。</li>
+        <li>「種（シード）」という整数をひとつ渡すと、<b>何度実行しても同じ並びの数</b>が出てきます。</li>
+        <li>同じ形が二度と作れないと、直すことも、比べることもできないからです。</li>
+      </ul>
+    </div>
+
+    <p>
+      ウィンナーを8本焼くとします。8本とも同じ太さ・同じ曲がり・同じ焼きムラなら、
+      それは工場の製品ではなくコピー＆ペーストに見えます。だから乱数で揺らします。
+      ここまではふつうです。問題はその次で、<b>ふつうの乱数だと二度と同じ8本が作れません</b>。
+    </p>
+    <p>
+      3本目だけ焼き色が変で直したい。ところが Run するたびに全部変わるので、
+      直したのか、たまたま別の個体が出ただけなのか分かりません。
+      だからこのプロジェクトは <code>Math.random()</code> を1回も使わず、
+      <b>種を渡すと毎回同じ数列を返す乱数</b>を自分で書いています。
+    </p>
+    <figure>
+<pre><span class="c">// 1. Rng : シード付き擬似乱数（mulberry32）</span>
+<span class="k">const</span> Rng = (seed) =&gt; {
+    <span class="k">let</span> s = seed &gt;&gt;&gt; <span class="n">0</span>;
+    <span class="k">return</span> () =&gt; {
+        s = (s + <span class="n">0x6D2B79F5</span>) | <span class="n">0</span>;
+        <span class="k">let</span> t = Math.imul(s ^ (s &gt;&gt;&gt; <span class="n">15</span>), <span class="n">1</span> | s);
+        t = (t + Math.imul(t ^ (t &gt;&gt;&gt; <span class="n">7</span>), <span class="n">61</span> | t)) ^ t;
+        <span class="k">return</span> ((t ^ (t &gt;&gt;&gt; <span class="n">14</span>)) &gt;&gt;&gt; <span class="n">0</span>) / <span class="n">4294967296</span>;
+    };
+};</pre>
+      <figcaption>13本すべてに、ほぼこの形で入っている。名前は mulberry32</figcaption>
+    </figure>
+    <p>
+      中身は「かき混ぜて、上の桁と下の桁をぶつけて、また混ぜる」だけです。
+      規則はあるのに、出てくる数の並びに規則が見えない。だから<b>擬似</b>乱数といいます。
+      大事なのは仕組みより性質のほうで、<b>入れた種が同じなら、出てくる数列も同じ</b>。
+      これが「同じ料理をもう一度作れる」ということです。
+    </p>
+
+    <div class="lab" id="lab02">
+      <p class="lab-title">実験 — 種を変える / 種を固定したまま作り直す</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="seedRange">種（シード）<span class="v" id="seedRangeV">7</span></label>
+            <input type="range" id="seedRange" min="1" max="60" step="1" value="7">
+          </div>
+          <div class="chips" id="seedFn">
+            <button class="chip" type="button" data-v="rng" aria-pressed="true">Rng(種)</button>
+            <button class="chip" type="button" data-v="rand">Math.random()</button>
+          </div>
+          <button class="chip" type="button" id="seedRedraw">もう一度、同じ設定で作る</button>
+          <div class="readout" id="seedOut">—</div>
+        </div>
+        <canvas id="seedCanvas" width="640" height="330" aria-label="種を変えるとウィンナー8本の個体差が変わる"></canvas>
+      </div>
+      <p class="hint">
+        ウィンナー8本の長さ・太さ・曲がり・焼きムラを、乱数から作っています。
+        「もう一度作る」を押したとき、Rng なら同じ8本、Math.random() なら毎回別の8本になります。
+      </p>
+    </div>
+
+    <h3>種は、1個ではなく何個も要る</h3>
+    <p>
+      実際のコードでは、種をひとつだけ持つのではなく<b>用途ごとに分けて</b>います。
+      たこ焼き.js なら、生地の形の乱数・焼きムラの乱数・ソースの垂れの乱数が別々の種から出ます。
+      分けておかないと、「ソースの量を変えたら生地の形まで変わってしまった」ということが起きるからです。
+    </p>
+    <figure>
+<pre><span class="c">// 個体ごとに種をずらす。同じ列でも i が違えば別の個体になる</span>
+<span class="k">const</span> rnd  = Rng(seed + i * <span class="n">1013</span>);      <span class="c">// 形</span>
+<span class="k">const</span> rndB = Rng(seed + i * <span class="n">1013</span> + <span class="n">77</span>); <span class="c">// 焼き色</span></pre>
+      <figcaption>種に「ずらす数」を足して枝分かれさせる。13本に共通のやり方</figcaption>
+    </figure>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>種を足し算だけで作ると、ぶつかることがあります。</b>
+      <code>seed + i</code> と <code>seed + j + 1</code> のような作り方をすると、
+      別々のはずの個体がたまたま同じ種になり、双子が生まれます。
+      掛ける数を大きめの素数（1013 や 9176 など）にしておくのはそのためです。</p>
+    </div>
+
+    <h3>正規分布のほうが「らしい」ことがある</h3>
+    <p>
+      <code>rnd()</code> は 0〜1 のあいだを平らに出します。長さを ±10% 振りたいときはこれでよいのですが、
+      「たいていは真ん中くらい、たまに極端」という揺れ方をさせたいときは、
+      平らな乱数だと極端なものが多すぎます。そこで <b>ガウス（正規分布）</b>を使います。
+      クッキーの反りや、団子の練りむらがこれです。
+    </p>
+    <figure>
+<pre><span class="c">// Box-Muller 法。平らな乱数2つから、釣鐘型の乱数を作る</span>
+<span class="k">const</span> gauss = (m, sd) =&gt;
+    m + sd * Math.sqrt(<span class="n">-2</span> * Math.log(Math.max(<span class="n">1e-9</span>, rnd())))
+          * Math.cos(<span class="n">6.28318</span> * rnd());</pre>
+      <figcaption>クッキー.js の反り、月見団子.js の練りむらはこちらを使う</figcaption>
+    </figure>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>上の実験で種を 7 から 8 に変え、8本すべてが変わることを確かめる。</li>
+        <li>Math.random() に切り替えて「もう一度作る」を3回押し、毎回変わることを確かめる。</li>
+        <li>ウィンナー.js を開いて Rng という語を検索し、何か所で新しい乱数を作っているか数える。</li>
+        <li>「同じ種なら同じ結果」でないと困る場面を、料理以外で3つ考えてみる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch01.html"><span class="dir">← まえの章</span><span class="ttl">01 「作る」と「読み込む」はどう違うのか</span></a>
+    <a class="next" href="ch03.html"><span class="dir">つぎの章 →</span><span class="ttl">03 焼きムラは、なめらかな乱数でできている</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

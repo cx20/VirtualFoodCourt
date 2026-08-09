@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>たべもののつくりかた — コードで料理をつくる技術ノート</title>
+<meta name="description" content="Babylon.js で料理を手続き的に生成する13本のサンプルを、中学生・高校生向けに解説する学習ポータル">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html" aria-current="page">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">Babylon.js / procedural food</p>
+      <h1>3Dの料理は、<br><span class="accent">数式から焼ける</span>。</h1>
+      <p class="lede">
+        このサイトで扱う13本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        点の座標を計算で並べ、焼き色をその場で描き、たれの濃さを厚みから解く。
+        絵を描く技術ではなく、形と質感を組み立てる技術です。
+        中学・高校の数学で追えるところから順に見ていきます。
+      </p>
+      <div class="hero-cta">
+        <a class="btn" href="start.html">まず動かしてみる</a>
+        <a class="btn ghost" href="ch01.html">01章から読む</a>
+        <button class="btn ghost" id="heroReplay" type="button">もう一度焼く</button>
+      </div>
+    </div>
+    <div class="stage">
+      <canvas id="heroCanvas" width="640" height="480" aria-label="たこ焼きが点から立体へ組み上がり、焼き色がついていく様子"></canvas>
+      <div class="stage-caption">
+        <b id="heroStage">準備中</b>
+        <span id="heroCount">0 頂点</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+
+<section class="chapter" id="howto" style="--ch:var(--p-kitsune);border-top:0;padding-top:34px">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">読み方<small style="opacity:.7">HOW TO</small></div>
+    <div>
+      <h2>このサイトの使い方</h2>
+      <p class="sub">上から順でも、気になる章からでも</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      各章には<b>その場で動かせる実験</b>がついています。スライダーを動かすと、
+      文章で説明していることが目の前で起きます。読むより先に、まず動かしてください。
+      むずかしい言葉は<a href="terms.html">用語集</a>にまとめてあります。
+    </p>
+    <ul class="roadmap">
+      <li><span class="rn">A</span><span class="rt"><b>とにかく動かしたい人</b><span><a href="zukan.html">図鑑</a>の写真を押す → その料理がこのサイトの中で動きます</span></span></li>
+      <li><span class="rn">B</span><span class="rt"><b>順番に理解したい人</b><span>01 → 02 → 03 …… と上から。04章（かたち）と05章（面と法線）がこの教材の背骨です。</span></span></li>
+      <li><span class="rn">C</span><span class="rt"><b>料理として面白い所だけ見たい人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch17.html">17</a>）へ。焼き色・たれ・透け・粒・潰れ。野菜には出てこない5つです。</span></span></li>
+      <li><span class="rn">D</span><span class="rt"><b>コードを読みたい人</b><span><a href="view.html">ソース</a>でファイルを選ぶ → 対応する章に戻る</span></span></li>
+    </ul>
+    <div class="note">
+      <b>必要な数学。</b>
+      sin・cos（三角関数）、座標、比例、指数関数（<code>exp</code>）、
+      それに少しだけベクトル（内積・外積）。
+      高校1年までの内容でだいたい追えます。出てきたところで、そのつど説明します。
+    </div>
+    <div class="note">
+      <b>姉妹編があります。</b>
+      同じ作りで野菜と果物23本を扱った<b>「やさいのつくりかた」</b>（VirtualVegetablePlant）。
+      第I部の11章はほとんど共通の内容なので、どちらから読んでもかまいません。
+      料理でしか出てこない話は第II部にまとめてあります。
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="chapters" style="--ch:var(--p-koge)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">第I部<small style="opacity:.7">PART I</small></div>
+    <div>
+      <h2>1皿をつくる（00〜11）</h2>
+      <p class="sub">1本の .js ファイルを、上から順にほどいていく構成</p>
+    </div>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+      <a class="hubcard" href="start.html" style="--ch:var(--p-kitsune)">
+        <span class="no">00<span style="opacity:.55;margin-left:8px">START</span></span>
+        <h3>まず動かしてみる</h3>
+        <p>インストールなし。ブラウザだけで13本を動かす手順。まずここから。</p>
+      </a>
+      <a class="hubcard" href="ch01.html" style="--ch:var(--p-koge)">
+        <span class="no">01<span style="opacity:.55;margin-left:8px">CONFIG</span></span>
+        <h3>「作る」と「読み込む」はどう違うのか</h3>
+        <p>モデルファイルも写真も読み込まず、実行した瞬間に座標と模様を計算で作る。</p>
+      </a>
+      <a class="hubcard" href="ch02.html" style="--ch:var(--p-wiener)">
+        <span class="no">02<span style="opacity:.55;margin-left:8px">Rng</span></span>
+        <h3>同じ種からは、同じ料理ができる</h3>
+        <p>Math.random() を使わない理由。種を渡すと毎回同じ結果になる乱数を自分で書く。</p>
+      </a>
+      <a class="hubcard" href="ch03.html" style="--ch:var(--p-cookie)">
+        <span class="no">03<span style="opacity:.55;margin-left:8px">Noise</span></span>
+        <h3>焼きムラは、なめらかな乱数でできている</h3>
+        <p>となり合う値がなめらかにつながる乱数。重ねると焼きムラや生地の肌理になる。</p>
+      </a>
+      <a class="hubcard" href="ch04.html" style="--ch:var(--p-sakura)">
+        <span class="no">04<span style="opacity:.55;margin-left:8px">Shape</span></span>
+        <h3>断面を1枚描けば、立体になる</h3>
+        <p>断面を1枚描いて軸のまわりに回す。回らないものは外形×縦断面で作る。</p>
+      </a>
+      <a class="hubcard" href="ch05.html" style="--ch:var(--p-yomogi)">
+        <span class="no">05<span style="opacity:.55;margin-left:8px">Mesh</span></span>
+        <h3>三角形の向きと、面の傾き</h3>
+        <p>3Dモデルの正体は座標の配列と三角形の番号表。裏返ると立体が消える理由。</p>
+      </a>
+      <a class="hubcard" href="ch06.html" style="--ch:var(--p-kitsune)">
+        <span class="no">06<span style="opacity:.55;margin-left:8px">Texture</span></span>
+        <h3>模様も、その場で描く</h3>
+        <p>UVで立体と画像を対応させ、模様を1ピクセルずつ計算で描く。色・光り方・凹凸の3枚。</p>
+      </a>
+      <a class="hubcard" href="ch07.html" style="--ch:var(--p-choco)">
+        <span class="no">07<span style="opacity:.55;margin-left:8px">PBR</span></span>
+        <h3>「照り」「ぬれ」「粉っぽさ」を数値で言う</h3>
+        <p>「照っている」「ぬれている」を数値で書く。粗さ・クリアコート・透け。</p>
+      </a>
+      <a class="hubcard" href="ch08.html" style="--ch:var(--p-karaage)">
+        <span class="no">08<span style="opacity:.55;margin-left:8px">Havok</span></span>
+        <h3>盛り付けは、手で置かない</h3>
+        <p>皿への盛り付けは手で置かない。重力と摩擦だけ与えて物理エンジンに任せる。</p>
+      </a>
+      <a class="hubcard" href="ch09.html" style="--ch:var(--p-sauce)">
+        <span class="no">09<span style="opacity:.55;margin-left:8px">Parts</span></span>
+        <h3>部品を作って、たくさん並べる</h3>
+        <p>青のりもかつお節も、テクスチャに描くと消える。実体のかけらとして撒く。</p>
+      </a>
+      <a class="hubcard" href="ch10.html" style="--ch:var(--p-salmon)">
+        <span class="no">10<span style="opacity:.55;margin-left:8px">Sweep</span></span>
+        <h3>曲がったものを作る</h3>
+        <p>ウィンナーも秋刀魚も曲がっている。先に軸を決め、断面を軸に垂直に置いていく。</p>
+      </a>
+      <a class="hubcard" href="ch11.html" style="--ch:var(--p-sanma)">
+        <span class="no">11<span style="opacity:.55;margin-left:8px">Scene</span></span>
+        <h3>見せ方を決める（光と露出）</h3>
+        <p>同じ料理でも光で別物になる。IBL・影・露出・トーンマッピング。</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="chapters2" style="--ch:var(--p-sauce)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">第II部<small style="opacity:.7">PART II</small></div>
+    <div>
+      <h2>火が通ったものをつくる（12〜17）</h2>
+      <p class="sub">野菜では出てこなかった、料理だけの6つの難所</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      第I部の11章は、ファイルの構成（CONFIG → Rng → Noise → Mesh utils → Fields → TextureLab → 本体 …）に
+      そのまま対応していました。並びは野菜編ともほとんど同じです。
+      違いが出るのはここからで、料理には<b>火が通っていて、たれが掛かっていて、
+      柔らかくて、粒が集まっていて、切ってある</b>。
+      第II部は、層ではなく「料理だから必要になったこと」で立てた6章です。
+    </p>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+      <a class="hubcard" href="ch12.html" style="--ch:var(--p-kitsune)">
+        <span class="no">12<span style="opacity:.55;margin-left:8px">Maillard</span></span>
+        <h3>焼き色は、形と相関している</h3>
+        <p>焼き色は最後に塗る飾りではない。形と結びついていないと「汚れ」に見える。</p>
+      </a>
+      <a class="hubcard" href="ch13.html" style="--ch:var(--p-sauce)">
+        <span class="no">13<span style="opacity:.55;margin-left:8px">Glaze</span></span>
+        <h3>たれは、色ではなく層</h3>
+        <p>たれを茶色く塗ると光沢のない卵になる。色は厚みから解くもの。</p>
+      </a>
+      <a class="hubcard" href="ch14.html" style="--ch:var(--p-sakura)">
+        <span class="no">14<span style="opacity:.55;margin-left:8px">Translucency</span></span>
+        <h3>透けないと、食べ物に見えない</h3>
+        <p>透けを切ると、白玉は石膏に、赤身は消しゴムになる。厚みを持たせる。</p>
+      </a>
+      <a class="hubcard" href="ch15.html" style="--ch:var(--p-gin)">
+        <span class="no">15<span style="opacity:.55;margin-left:8px">Grains</span></span>
+        <h3>粒を1400個置いて、谷を暗くする</h3>
+        <p>茶碗一杯は約1400粒。説得力を決めるのは粒間の暗がりで、SSAOでは出ない。</p>
+      </a>
+      <a class="hubcard" href="ch16.html" style="--ch:var(--p-yomogi)">
+        <span class="no">16<span style="opacity:.55;margin-left:8px">Contact</span></span>
+        <h3>触れ合うと、潰れる</h3>
+        <p>団子は真球では積めない。潰した体積の行き先と、接触の縁の土手。</p>
+      </a>
+      <a class="hubcard" href="ch17.html" style="--ch:var(--p-akami)">
+        <span class="no">17<span style="opacity:.55;margin-left:8px">Variants</span></span>
+        <h3>「似ているのに別物」を作り分ける</h3>
+        <p>トーストとエッグトーストは同じプログラム。色を変えただけでは別物にならない。</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="refs" style="--ch:var(--p-karaage)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">資料<small style="opacity:.7">REFERENCE</small></div>
+    <div>
+      <h2>13本を引く</h2>
+      <p class="sub">ファイルから逆に読みたいとき</p>
+    </div>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+      <a class="hubcard" href="zukan.html" style="--ch:var(--p-koge)">
+        <span class="no">13<span style="opacity:.55;margin-left:8px">FILES</span></span>
+        <h3>どのファイルで、何が学べるか</h3>
+        <p>13本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
+      </a>
+      <a class="hubcard" href="view.html" style="--ch:var(--p-karaage)">
+        <span class="no">SRC<span style="opacity:.55;margin-left:8px">SOURCE</span></span>
+        <h3>サンプルのソースを読む</h3>
+        <p>13本の .js をその場で表示。コピーすれば、そのまま Playground に貼れます。</p>
+      </a>
+      <a class="hubcard" href="terms.html" style="--ch:var(--p-choco)">
+        <span class="no">用語<span style="opacity:.55;margin-left:8px">GLOSSARY</span></span>
+        <h3>コードに出てくる言葉</h3>
+        <p>法線、UV、巻き順、ORM、メイラード……最初の1周で引っかかる言葉だけ。検索できます。</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>焼き色は、形と相関している — たべもののつくりかた</title>
+<meta name="description" content="焼き色は、形と相関している">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html" aria-current="page">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-kitsune)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第12章</p>
+<section class="chapter" id="ch12" style="--ch:var(--p-kitsune)">
+  <div class="chapter-head">
+    <div class="chnum">12<small>Maillard</small></div>
+    <div>
+      <h2>焼き色は、形と相関している</h2>
+      <p class="sub">browning — 焼き色は飾りではない</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>焼き色を無関係なノイズで塗ると、「焼けた」ではなく<b>「汚れた」</b>ように見えます。</li>
+        <li>実物は、<b>鉄板に当たった凸部が濃く、折り込みの溝は淡い</b>。形と結びついています。</li>
+        <li>だから形とテクスチャは、<b>同じ種・同じ場</b>から作らなければいけません。</li>
+      </ul>
+    </div>
+
+    <p>
+      第I部の11章は、野菜編とほとんど同じ話でした。ここからが料理の本題です。
+      13本のサンプルのうち、9本には<b>火が通っています</b>。
+      そして「火が通っている」の見た目は、ほぼすべて<b>焼き色</b>で決まります。
+    </p>
+    <p>
+      焼き色を作るのは簡単に見えます。茶色のノイズを表面に乗せればよさそうです。
+      ところが、それをやると失敗します。たこ焼き.js のコメントに、こうあります。
+    </p>
+    <div class="note">
+      <b>「焼き色は幾何と相関する。鉄板に当たった凸部が濃く、折り込みの溝とくぼみが淡い。
+      無相関のノイズを乗せると、『焼けた球』ではなく『汚れた球』に見える」</b>
+    </div>
+    <p>
+      理由は物理的です。焼き色（メイラード反応）は、熱が伝わったところで進みます。
+      熱源に近い出っぱりから焦げ、へこみには熱が回りません。
+      だから焼き色の分布は、形のでこぼこの<b>写し</b>になります。
+      形と関係ないムラを乗せると、脳は「焼けた」ではなく「別のものが付着している」と読みます。
+    </p>
+
+    <div class="lab" id="lab12">
+      <p class="lab-title">実験 — 焼き色を、形と結びつける / 切り離す</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="maillardMode">
+            <button class="chip" type="button" data-v="corr" aria-pressed="true">形と相関させる</button>
+            <button class="chip" type="button" data-v="noise">無関係なノイズ</button>
+            <button class="chip" type="button" data-v="flat">一様に塗る</button>
+          </div>
+          <div class="ctrl">
+            <label for="maillardAmt">焼き加減<span class="v" id="maillardAmtV">0.50</span></label>
+            <input type="range" id="maillardAmt" min="0" max="1" step="0.01" value="0.5">
+          </div>
+          <div class="ctrl">
+            <label for="maillardRelief">生地の折り込み（でこぼこ）<span class="v" id="maillardReliefV">0.55</span></label>
+            <input type="range" id="maillardRelief" min="0" max="1" step="0.01" value="0.55">
+          </div>
+          <div class="readout" id="maillardOut">—</div>
+        </div>
+        <canvas id="maillardCanvas" width="640" height="360" aria-label="たこ焼きの焼き色を形と相関させる実験"></canvas>
+      </div>
+      <p class="hint">
+        でこぼこの量は3つのモードで同じです。変えているのは「焼き色を何から決めるか」だけ。
+        それでも、無関係なノイズにした瞬間に、焼けたようには見えなくなります。
+      </p>
+    </div>
+
+    <h3>同じ種から、形とテクスチャの両方を作る</h3>
+    <p>
+      相関させるには、実装上の工夫が要ります。テクスチャを描くのはテクスチャの担当、
+      形を作るのは形の担当、と分けてしまうと、この2つはもう結びつきません。
+    </p>
+    <p>
+      たこ焼き.js は、<b>「柄」という単位</b>を導入して解決しています。
+      柄の種をひとつ決めると、そこから生地の折り込みの場と、その場から作った焼き色が
+      両方出てくる。8個のたこ焼きには4種類の柄を割り当て、
+      大きさ・向き・傾きだけを個体ごとに変えます。
+    </p>
+    <figure>
+<pre><span class="c">// 6. Pattern : 形状 + テクスチャ（4種のアトラス）
+// 同じ patternSeed から、でこぼこの場と焼き色の両方を作る</span>
+<span class="k">const</span> field = foldField(patternSeed);          <span class="c">// 折り込みの高さの場</span>
+<span class="k">const</span> tex   = bakeCrust(patternSeed, field);   <span class="c">// その場から焼き色を焼く</span>
+
+<span class="c">// 【対策】全個体ぶんのテクスチャを焼くと 1024² × 3枚 × 8個 で数十秒。
+//         4柄だけ焼いて 2x2 のアトラスにまとめ、UV で切り替える</span></pre>
+      <figcaption>たこ焼き.js。テクスチャを個体ごとに焼かないのは、速度のためだけではない</figcaption>
+    </figure>
+
+    <h3>焼き色は「全面を覆ってはいけない」</h3>
+    <p>
+      もうひとつの落とし穴が、<b>焼けている面積</b>です。
+      焼き魚（サンマ）.js の修正記録の第1項目がこれです。
+    </p>
+    <div class="note">
+      <b>「heat の底上げを 0.62 → 0.10、wash に天井 0.62。
+      実写は銀白が7割。可視面のほぼ全域がきつね色になり、豹柄／錆びた鉄板に見えていた」</b>
+    </div>
+    <p>
+      焼き目は「点在する丸い斑」であって、全体のグラデーションではありません。
+      焦げの面積を1割減らすだけで、料理は一気に実物に近づきます。
+      クッキーも同じで、<b>縁・高いところ・底が濃く、型押しの凹部は熱が回らないので白く残る</b>。
+      ここが逆だと一気に嘘になります。
+    </p>
+
+    <h3>割れ目の中は、周囲より明るい</h3>
+    <p>
+      クッキーやトーストの割れ目を、暗い線で描くと焦げた溝になります。
+      実物の割れ目は、<b>焼けたあとに生地が広がって裂けた跡</b>なので、
+      中は焼けていない生地が露出しています。つまり周囲より<b>明るい</b>。
+      焼き色を「形から決める」という原則を守ると、これも自然に出ます。
+      割れ目は熱源から見て奥まっているからです。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>焼き色は、色だけでなく粗さも変えます。</b>
+      焦げた部分は炭化して光りません。ウィンナー.js には
+      「炭化した黒い点だけが局所的に粗い（そこだけ光らない）」とあります。
+      色の画像だけ焼き分けて ORM を一様にすると、
+      焦げているのにてかてか光る、という気持ちの悪いものができます。</p>
+      <p><b>油の膜は、焼き色の上に乗ります。</b>
+      たこ焼きの高台は「油でぬれて明るい」（crustWet）。
+      焼き色を計算したあと、そのうえに濡れの層を掛けるという順番が要ります。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>3つのモードを切り替え、どれが「焼けている」に見えるか判定する。</li>
+        <li>「形と相関させる」のまま、でこぼこを 0 にすると何が起きるか確かめる。</li>
+        <li>焼き加減を 1.0 にして、全面が焦げると料理に見えなくなることを確かめる。</li>
+        <li>クッキー.js で「割れ目」を検索し、なぜ明るいのか読む。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch11.html"><span class="dir">← まえの章</span><span class="ttl">11 見せ方を決める（光と露出）</span></a>
+    <a class="next" href="ch13.html"><span class="dir">つぎの章 →</span><span class="ttl">13 たれは、色ではなく層</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三角形の向きと、面の傾き — たべもののつくりかた</title>
+<meta name="description" content="三角形の向きと、面の傾き">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html" aria-current="page">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-yomogi)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第05章</p>
+<section class="chapter" id="ch05" style="--ch:var(--p-yomogi)">
+  <div class="chapter-head">
+    <div class="chnum">05<small>Mesh</small></div>
+    <div>
+      <h2>三角形の向きと、面の傾き</h2>
+      <p class="sub">winding order / normals — 巻き順と法線</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>3Dモデルの正体は、<b>座標の配列</b>と<b>三角形の番号表</b>の2つだけです。</li>
+        <li>三角形には表と裏があり、頂点を並べる向き（<b>巻き順</b>）で決まります。裏返ると消えます。</li>
+        <li>面がどちらを向いているかの矢印を<b>法線</b>といい、明るさはこれだけで決まります。</li>
+      </ul>
+    </div>
+
+    <p>
+      04章で作った断面を、実際に立体にします。やることは2つだけです。
+      <b>点を並べる</b>ことと、<b>どの3点で三角形を張るかを番号で書く</b>こと。
+      Babylon.js では前者を <code>positions</code>、後者を <code>indices</code> と呼びます。
+    </p>
+    <figure>
+<pre><span class="c">// 断面を N 段 × M 分割で回して、格子状に点を並べる</span>
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; N; i++) {
+    <span class="k">const</span> t = i / (N - <span class="n">1</span>);
+    <span class="k">for</span> (<span class="k">let</span> j = <span class="n">0</span>; j &lt;= M; j++) {
+        <span class="k">const</span> a = j / M * TAU;
+        <span class="k">const</span> r = radius(t, a);
+        positions.push(r * Math.cos(a), yAt(t), r * Math.sin(a));
+        uvs.push(j / M, t);
+    }
+}</pre>
+      <figcaption>j が M で終わらず M まで回るのは、継ぎ目の列を2重に持つため（06章で効いてくる）</figcaption>
+    </figure>
+
+    <h3>巻き順 — 裏返ると、立体が消える</h3>
+    <p>
+      三角形には表と裏があります。どちらが表かは、<b>3つの頂点を並べた向き</b>で決まります。
+      外から見て反時計回りなら表。3Dの世界では、裏側の面は描くのを省略します
+      （見えないところを描いても無駄なので）。だから<b>間違えると立体がまるごと消えます</b>。
+      正確には、内側だけが見えて、風船の内壁を見ているような妙な絵になります。
+    </p>
+    <p>
+      13本のサンプルは、この間違いを<b>実行時に自分で検出して直します</b>。
+      作った直後にすべての面の法線を合計し、重心から外へ向いているかを調べる。
+      向いていなければ番号表を入れ替える。「気をつける」ではなく「測って直す」という方針です。
+    </p>
+    <figure>
+<pre><span class="c">// 3. Mesh utils : 巻き順の自動判定</span>
+<span class="c">// 【対策】1頂点で判定すると、たまたま凹んだ所に当たって全体が裏返る。
+//         全頂点ぶんの内積の総和で決める（クッキー.js の修正記録より）</span>
+<span class="k">let</span> dot = <span class="n">0</span>;
+<span class="k">for</span> (<span class="k">let</span> k = <span class="n">0</span>; k &lt; nv; k++) {
+    dot += nx[k] * (px[k] - cx) + ny[k] * (py[k] - cy) + nz[k] * (pz[k] - cz);
+}
+<span class="k">if</span> (dot &lt; <span class="n">0</span>) flipIndices(indices);</pre>
+      <figcaption>クッキー.js の cookie-A → A2 で直った箇所。1点で決めるとクラッカーが裏返っていた</figcaption>
+    </figure>
+
+    <h3>法線 — 明るさは、これだけで決まる</h3>
+    <p>
+      面がどちらを向いているかを表す矢印が<b>法線</b>です。
+      光の向きとの角度で明るさが決まるので、
+      <b>形は正しいのに法線が変だと、料理が金属や紙に見えます</b>。
+    </p>
+    <p>
+      法線には2通りの出し方があります。三角形ごとに1本持つ（フラット）と、
+      頂点ごとに、その頂点を囲む面の平均を持つ（スムーズ）。
+      団子はスムーズ、板チョコの角はフラットであってほしい。
+      料理によって、また同じ料理でも場所によって使い分けます。
+    </p>
+
+    <div class="lab" id="lab05">
+      <p class="lab-title">実験 — 巻き順と法線を切り替える</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="meshMode">
+            <button class="chip" type="button" data-v="solid" aria-pressed="true">ふつうに描く</button>
+            <button class="chip" type="button" data-v="wire">面の格子</button>
+            <button class="chip" type="button" data-v="normal">法線の向き</button>
+            <button class="chip" type="button" data-v="facing">表と裏</button>
+          </div>
+          <label class="switch"><input type="checkbox" id="meshSmooth" checked>法線をなめらかにする</label>
+          <label class="switch"><input type="checkbox" id="meshFlip">巻き順を裏返す</label>
+          <div class="ctrl">
+            <label for="meshN">段の数<span class="v" id="meshNV">40</span></label>
+            <input type="range" id="meshN" min="5" max="64" step="1" value="40">
+          </div>
+          <div class="ctrl">
+            <label for="meshM">分割数<span class="v" id="meshMV">40</span></label>
+            <input type="range" id="meshM" min="4" max="64" step="1" value="40">
+          </div>
+        </div>
+        <canvas id="meshCanvas" width="640" height="360" aria-label="団子のメッシュを巻き順・法線・分割数で切り替える"></canvas>
+      </div>
+      <p class="hint">
+        「表と裏」では、裏を向いた面が赤くなります。「巻き順を裏返す」を押すと全部赤くなり、
+        ふつうに描いたときは中身が透けて見えます。
+      </p>
+    </div>
+
+    <h3>法線を「溶接」する</h3>
+    <p>
+      いくつかの部品をくっつけて1つの料理にすると、つなぎ目に線が入ることがあります。
+      同じ場所に頂点が2つあり、それぞれが別の法線を持っているからです。
+      そこで、<b>ごく近い頂点どうしの法線を平均して揃える</b>処理を入れます。これを溶接といいます。
+      13本すべてに <code>weldNormals</code> という関数が入っているのはそのためです。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>分割数を上げれば良くなるわけではありません。</b>
+      上の実験で分割数を 64 にしても、団子はほとんど変わりません。
+      逆に細かくしすぎると、法線マップ（06章）で作った細かい凹凸と干渉してモアレます。
+      クッキー.js には「型押しや格子は 0.3mm しかないので、幾何は低周波だけ、
+      細かい起伏は法線マップに回す」と書いてあります。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「表と裏」に切り替えてから「巻き順を裏返す」を押し、色がどう変わるか見る。</li>
+        <li>分割数を 4 まで下げて、団子が何角形になるか数える。</li>
+        <li>「法線をなめらかにする」を切って、同じ形でも印象がどれだけ変わるか観察する。</li>
+        <li>クッキー.js の中で「巻き順」という語を検索し、なぜ実測しているのか読む。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch04.html"><span class="dir">← まえの章</span><span class="ttl">04 断面を1枚描けば、立体になる</span></a>
+    <a class="next" href="ch06.html"><span class="dir">つぎの章 →</span><span class="ttl">06 模様も、その場で描く</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

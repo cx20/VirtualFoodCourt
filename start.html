@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>まず動かしてみる — たべもののつくりかた</title>
+<meta name="description" content="まず動かしてみる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html" aria-current="page">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-kitsune)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>はじめに</p>
+<section class="chapter" id="start" style="--ch:var(--p-kitsune)">
+  <div class="chapter-head">
+    <div class="chnum">00<small>START</small></div>
+    <div>
+      <h2>まず動かしてみる</h2>
+      <p class="sub">読む前に、動かす。5分で終わります</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>この13本は、<b>ブラウザだけ</b>で動きます。インストールは何も要りません。</li>
+        <li>Babylon.js Playground という公式サイトに、ファイルの中身を<b>まるごと貼って実行</b>するだけです。</li>
+        <li>先に動かして、数字をひとつ壊してみる。<b>説明を読むのはそのあと</b>のほうが、ずっと早く分かります。</li>
+      </ul>
+    </div>
+
+    <p>
+      このプロジェクトの .js ファイルは、ふつうの Web ページに読み込んで使うものではありません。
+      <b>Babylon.js Playground</b>（バビロン・ジェイエス・プレイグラウンド）という、
+      ブラウザの中で3Dのプログラムを書いて即座に実行できる公式サイトのための形になっています。
+    </p>
+    <div class="note">
+      <b>いきなり動かしたいだけなら。</b>
+      <a href="zukan.html">図鑑</a>の写真を押すと、このサイトの中でそのまま動きます。
+      貼り付けの手順を踏むのは、<b>数字を書き換えて遊びたくなってから</b>で十分です。
+    </div>
+
+    <ol class="steps">
+      <li>
+        <h3>Playground を開く</h3>
+        <p><a href="https://playground.babylonjs.com/" target="_blank" rel="noopener">playground.babylonjs.com</a>
+        をブラウザで開きます。左が入力欄、右が3Dの画面です。
+        パソコンのほうがやりやすいですが、スマホでも動きます。</p>
+      </li>
+      <li>
+        <h3>もとから入っているコードを全部消す</h3>
+        <p>左側をクリックして、<code>Ctrl</code>+<code>A</code>（Mac は <code>⌘</code>+<code>A</code>）で全選択 → <code>Delete</code>。
+        まっさらにしてから貼るのがコツです。混ざると動きません。</p>
+      </li>
+      <li>
+        <h3><b>トースト.js</b> の中身を全部コピーして貼る</h3>
+        <p>最初の1本は <b>トースト.js</b> がおすすめです。13本のなかでいちばん構造が素直で、
+        「四角い板の上面に、す（気泡）を彫って、焼き色を塗る」だけでできています。
+        <a href="view.html?f=%E3%83%88%E3%83%BC%E3%82%B9%E3%83%88.js">ソースを読む</a>のページに
+        「コードをコピー」ボタンがあるので、それを押して Playground の左側に貼り付けます。</p>
+      </li>
+      <li>
+        <h3>実行する</h3>
+        <p>上の <b>Run</b> ボタン（または <code>Alt</code>+<code>Enter</code>）。
+        数秒〜十数秒待つと、皿の上にトーストが出てきます。
+        右下にスライダーが出るので、動かしてみてください。</p>
+        <div class="trap">
+          <span class="label">うまくいかないとき</span>
+          <p><b>真っ黒のまま／なかなか出てこない</b> — このプロジェクトは模様を画像として読み込まず、
+          実行するたびに <b>1ピクセルずつ計算して描いて</b>います。1024×1024 を何枚も焼くので、
+          出るまでに十数秒かかるサンプルがあります（たこ焼きとチョコレートが特に長い）。まず待ってみてください。</p>
+          <p><b>エラーが出る</b> — 貼り付けたときに古いコードが残っていないか確認してください。
+          物理エンジン（Havok）を使うサンプルは、その読み込みにも数秒かかります。</p>
+          <p><b>動きがカクカクする</b> — 3Dの計算をパソコンが全部やっています。
+          ブラウザの他のタブを閉じると軽くなります。</p>
+        </div>
+      </li>
+      <li>
+        <h3>数字をひとつ、わざと壊す</h3>
+        <p>ファイルの上のほうにある <code>PRESETS</code> の中から <code>bake</code>（焼き加減）や
+        <code>thickness</code>（厚み）を探して、思いきり大きな値に書き換えて Run。
+        <b>どの数字が何に効くかは、壊すといちばん早く分かります。</b>
+        壊してしまっても、もう一度コピーして貼り直せば元どおりです。</p>
+      </li>
+      <li>
+        <h3>次の1本へ</h3>
+        <p>トーストの次は <b>花見団子.js</b>（球を潰して串に刺す）、
+        <b>クッキー.js</b>（皿に落として積む）あたりが読みやすい順です。
+        <b>たこ焼き.js</b> と <b>ご飯.js</b> は分量が多いので後回しでかまいません。</p>
+      </li>
+    </ol>
+
+    <h3>13本は、こんな料理です</h3>
+    <p>
+      主食（ごはん・トースト）、おかず（唐揚げ・焼き魚・ウィンナー）、粉もの（たこ焼き）、
+      甘いもの（クッキー・チョコレート・団子）、そして寿司。
+      わざと種類を散らしてあります。<b>作り方が全部ちがうから</b>です。
+      一覧は<a href="zukan.html">図鑑</a>にあります。
+    </p>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>トースト.js を Playground で動かし、右下の「焼き加減」を端から端まで動かしてみる。</li>
+        <li>焼き加減を変えたとき、色以外に何が変わるか（艶・耳の張り）を観察して1行で書く。</li>
+        <li>図鑑から好きな料理を3つ選んで、このサイトの中で動かしてみる。</li>
+        <li>13本のファイルの先頭のコメントだけを読み比べて、共通する見出しを探す。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <span class="prev none"></span>
+    <a class="next" href="ch01.html"><span class="dir">つぎの章 →</span><span class="ttl">01 「作る」と「読み込む」はどう違うのか</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

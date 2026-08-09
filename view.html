@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプルのソースを読む — たべもののつくりかた</title>
+<meta name="description" content="13本の .js を行番号つきで表示します">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html" aria-current="page">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-karaage)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>ソースを読む</p>
+<section class="chapter" id="view" style="--ch:var(--p-karaage)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:13px">src<small style="opacity:.7">SOURCE</small></div>
+    <div>
+      <h2>サンプルのソースを読む</h2>
+      <p class="sub">13本の .js を、そのまま表示します</p>
+    </div>
+  </div>
+  <div class="body" style="max-width:none">
+    <p style="max-width:70ch">
+      読みたいファイルを選んでください。行番号つきで全文が出ます。
+      <b>「コードをコピー」</b>を押せばファイルまるごとがクリップボードに入るので、
+      そのまま <a href="https://playground.babylonjs.com/" target="_blank" rel="noopener">Babylon.js Playground</a>
+      に貼れば動きます（→ <a href="start.html">00 まず動かしてみる</a>）。
+      行番号はコピーに含まれません。
+    </p>
+
+    <div class="filechips" id="viewChips"></div>
+
+    <div class="viewer">
+      <div class="viewer-bar">
+        <b id="viewTitle">—</b>
+        <span class="d" id="viewDesc"></span>
+        <span class="meta" id="viewMeta"></span>
+        <button class="chip" type="button" id="viewCopy">コードをコピー</button>
+        <a id="viewPlay" href="play.html">▶ 動かす</a>
+        <a id="viewRaw" href="#" target="_blank" rel="noopener">別のタブで開く ↗</a>
+      </div>
+      <div class="codewrap" id="viewWrap">
+        <pre class="gutter" id="viewGutter" aria-hidden="true"></pre>
+        <pre class="code"><code id="viewCode"></code></pre>
+      </div>
+    </div>
+
+    <div class="body" style="margin-top:34px">
+      <h3>どこを読めばいいか</h3>
+      <p>
+        どのファイルも、先頭に「構成」というコメントがあります。
+        並びはだいたい共通なので、番号とこのサイトの章を対応させておきます。
+      </p>
+      <table>
+        <tr><th>ファイル内の番号</th><th>中身</th><th>対応する章</th></tr>
+        <tr><td>0. CONFIG</td><td>種類プリセット。焼き加減や寸法の数値</td><td><a href="ch01.html">01 手続き生成</a> / <a href="ch17.html">17 差分</a></td></tr>
+        <tr><td>1. Rng</td><td>シード付き擬似乱数</td><td><a href="ch02.html">02 乱数</a></td></tr>
+        <tr><td>2. Noise</td><td>値ノイズ / 周期ノイズ / fBm / セルノイズ</td><td><a href="ch03.html">03 ノイズ</a></td></tr>
+        <tr><td>3. Mesh utils</td><td>巻き順の判定・法線の溶接・掃引</td><td><a href="ch05.html">05 面と法線</a> / <a href="ch10.html">10 曲がり</a></td></tr>
+        <tr><td>4. Fields / Section / Shape</td><td>断面のテーブル、外形、焼き色の場、垂れの輪郭</td><td><a href="ch04.html">04 かたち</a> / <a href="ch12.html">12 焼き色</a></td></tr>
+        <tr><td>5. TextureLab</td><td>アルベド・ORM・法線・厚みの生成</td><td><a href="ch06.html">06 テクスチャ</a> / <a href="ch13.html">13 たれ</a> / <a href="ch14.html">14 透け</a></td></tr>
+        <tr><td>6〜7. 本体 / トッピング</td><td>その料理そのものの組み立てと、上に乗るもの</td><td><a href="ch09.html">09 部品</a> / <a href="ch15.html">15 粒</a></td></tr>
+        <tr><td>7〜8. 皿 / 板 / トレイ</td><td>器と、その上への配置</td><td><a href="ch08.html">08 物理</a> / <a href="ch16.html">16 潰れ</a></td></tr>
+        <tr><td>8〜9. Scene</td><td>光・影・露出・被写界深度</td><td><a href="ch11.html">11 光</a></td></tr>
+        <tr><td>9〜10. GUI</td><td>右下のスライダー</td><td>—</td></tr>
+      </table>
+      <div class="note">
+        <b>コメントの【対策】を探してみてください。</b>
+        これは「一度失敗して直した記録」です。なぜその数値なのか、なぜその順番なのかが、
+        たいていそこに書いてあります。このサイトの各章にある「つまずきポイント」は、
+        ほとんどがここから拾ってきたものです。
+        焼き魚（サンマ）.js のように、修正の履歴が10項目そのまま残っているファイルもあります。
+      </div>
+    </div>
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="zukan.html"><span class="dir">← まえへ</span><span class="ttl">13 どのファイルで、何が学べるか</span></a>
+    <a class="next" href="terms.html"><span class="dir">つぎへ →</span><span class="ttl">用語 コードに出てくる言葉</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>
