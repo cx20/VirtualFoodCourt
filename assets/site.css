@@ -1,0 +1,564 @@
+/* =========================================================
+   トークン
+
+   色はすべて、このリポジトリの .js から実際に使われている値を拾って
+   sRGB 0-1 → 16進に直したもの。飾りではなく出典のある色。
+   （例：ご飯.js の albedo [0.952,0.932,0.878] → 243,238,224 → #F3EEE0）
+   ========================================================= */
+:root{
+  /* 紙。経木の舟皿・敷紙・パンの断面。野菜版より一段あたたかい */
+  --paper:#F5F1E8;
+  --paper-2:#EDE7DA;
+  --paper-3:#E3DBCA;
+  --grid:#DCD2BC;
+  --grid-strong:#C8BA9C;
+
+  --ink:#241C15;
+  --ink-2:#57493C;
+  --ink-3:#8A7765;
+
+  /* 顔料（出典つき） */
+  --p-kitsune:#E09B53;  /* トースト.js CBR2      [0.878,0.608,0.325] きつね色 */
+  --p-koge:#965821;     /* たこ焼き.js crustBrown [0.588,0.345,0.129] 濃い焼き目 */
+  --p-sauce:#58250E;    /* たこ焼き.js saucePool  [0.345,0.145,0.055] ソースのたまり */
+  --p-akami:#8F1619;    /* お寿司.js flesh(赤身)  [0.560,0.088,0.098] */
+  --p-salmon:#E07852;   /* 焼き魚（鮭）.js fleshDeep [0.880,0.470,0.320] */
+  --p-sanma:#142426;    /* 焼き魚（サンマ）.js back  [0.078,0.142,0.150] 背の青黒 */
+  --p-gin:#9AAAB2;      /* 焼き魚（サンマ）.js flank [0.605,0.665,0.700] 体側の銀 */
+  --p-choco:#3A2116;    /* チョコレート.js base   [0.226,0.130,0.088] ダーク */
+  --p-wiener:#CC6528;   /* ウィンナー.js cook     [0.800,0.395,0.155] */
+  --p-sakura:#F49DAD;   /* 花見団子.js 桜 base    [0.955,0.615,0.680] */
+  --p-yomogi:#8FA754;   /* 花見団子.js よもぎ base [0.560,0.655,0.330] */
+  --p-rice:#F3EEE0;     /* ご飯.js albedo         [0.952,0.932,0.878] */
+  --p-karaage:#AB5517;  /* 唐揚げ.js MID          [0.670,0.335,0.090] */
+  --p-cookie:#8F5A2B;   /* クッキー.js edge       [0.560,0.352,0.170] */
+
+  --accent:var(--p-karaage);
+
+  --font-display:"Hiragino Mincho ProN","HiraMinProN-W6","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --font-body:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo",system-ui,sans-serif;
+  --font-mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Noto Sans Mono",monospace;
+
+  --rule:1px solid var(--grid-strong);
+  --maxw:1160px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+body{
+  margin:0;
+  font-family:var(--font-body);
+  color:var(--ink);
+  background-color:var(--paper);
+  /* 方眼紙。この教材の主題そのものが「座標を並べて形を作る」なので、
+     背景が飾りではなく作業台になる */
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px);
+  background-size:8px 8px, 8px 8px, 64px 64px, 64px 64px;
+  background-position:-1px -1px,-1px -1px,-1px -1px,-1px -1px;
+  line-height:1.85;
+  font-size:16px;
+  -webkit-text-size-adjust:100%;
+}
+
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(171,85,23,.3)}
+a:hover{border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--p-karaage);outline-offset:3px}
+
+/* =========================================================
+   ヘッダ / ナビ
+   ========================================================= */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(245,241,232,.93);
+  backdrop-filter:blur(6px);
+  border-bottom:var(--rule);
+}
+.topbar-in{
+  max-width:var(--maxw);margin:0 auto;padding:9px 20px;
+  display:flex;align-items:center;gap:18px;
+}
+.brand{
+  font-family:var(--font-display);font-size:17px;letter-spacing:.06em;
+  white-space:nowrap;color:var(--ink);border:0;
+}
+.brand .dot{color:var(--p-karaage)}
+.navlinks{
+  display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-left:auto;
+  /* flex の中の要素は既定で「中身の幅」より縮まない。min-width:0 を入れないと、
+     章が増えたぶんナビが横に押し広げてページ全体が横スクロールする */
+  min-width:0;flex:1 1 auto;
+}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;
+  color:var(--ink-2);border:0;padding:5px 7px;border-radius:2px;white-space:nowrap;
+}
+.navlinks a:hover{background:var(--paper-3);color:var(--ink)}
+.navlinks a[aria-current="page"]{
+  background:var(--paper-3);color:var(--ink);
+  box-shadow:inset 0 -2px 0 var(--accent);
+}
+
+/* =========================================================
+   ヒーロー
+   ========================================================= */
+.hero{max-width:var(--maxw);margin:0 auto;padding:52px 20px 30px}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.eyebrow{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;
+  color:var(--ink-3);text-transform:uppercase;margin:0 0 14px;
+}
+h1{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(34px,5.4vw,58px);line-height:1.24;margin:0 0 20px;
+  letter-spacing:.02em;
+}
+h1 .accent{
+  color:var(--p-karaage);
+  /* 定規で引いた線＝実験ノートの語彙 */
+  box-shadow:inset 0 -.14em 0 rgba(171,85,23,.18);
+}
+.lede{font-size:16.5px;color:var(--ink-2);margin:0 0 26px;max-width:44ch}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{
+  font-family:var(--font-body);font-size:14px;
+  padding:10px 20px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+  border-radius:2px;cursor:pointer;transition:.15s;
+}
+.btn:hover{background:var(--p-karaage);border-color:var(--p-karaage)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--paper-3);color:var(--ink);border-color:var(--ink)}
+a.btn{border-bottom:1px solid var(--ink)}
+a.btn:hover{border-bottom-color:var(--p-karaage)}
+
+.stage{
+  position:relative;background:var(--paper-2);
+  border:var(--rule);border-radius:2px;padding:14px;
+}
+.stage canvas{display:block;width:100%;height:auto;border-radius:1px}
+.stage-caption{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  letter-spacing:.06em;margin-top:10px;
+}
+.stage-caption b{color:var(--ink);font-weight:500;font-family:var(--font-body);font-size:12.5px}
+
+/* =========================================================
+   共通レイアウト
+   ========================================================= */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+.chapter{padding:64px 0;border-top:var(--rule)}
+.chapter-head{display:flex;gap:20px;align-items:flex-start;margin-bottom:26px}
+.chnum{
+  flex:none;width:56px;height:56px;border-radius:2px;
+  display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:19px;letter-spacing:.02em;
+  color:#fff;background:var(--ch,#333);
+}
+.chnum small{display:block;font-size:8.5px;letter-spacing:.14em;opacity:.75;margin-top:-2px}
+.chapter h2{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(23px,3.2vw,31px);margin:0 0 6px;line-height:1.4;letter-spacing:.02em;
+}
+.chapter-head .sub{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);letter-spacing:.05em;margin:0;
+}
+.body{max-width:70ch}
+.body p{margin:0 0 18px}
+.body h3{
+  font-family:var(--font-display);font-size:18.5px;font-weight:600;
+  margin:34px 0 12px;letter-spacing:.02em;
+}
+.body ul,.body ol{margin:0 0 18px;padding-left:1.3em}
+.body li{margin-bottom:7px}
+code{
+  font-family:var(--font-mono);font-size:.88em;
+  background:var(--paper-3);padding:1px 5px;border-radius:2px;
+}
+
+/* コードブロック */
+pre{
+  font-family:var(--font-mono);font-size:12.5px;line-height:1.75;
+  background:#231B14;color:#E4DCCE;padding:16px 18px;border-radius:2px;
+  overflow-x:auto;margin:0 0 20px;
+}
+pre .c{color:#8F7E68}      /* コメント */
+pre .k{color:#E9A9A0}      /* キーワード */
+pre .n{color:#E4C07A}      /* 数値 */
+pre .s{color:#B9CE8D}      /* 文字列 */
+figure{margin:0 0 22px}
+figcaption{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  letter-spacing:.04em;margin-top:8px;
+}
+
+/* 注意ボックス（元コードの【対策】に対応） */
+.trap{
+  border-left:3px solid var(--p-akami);
+  background:rgba(143,22,25,.05);
+  padding:14px 18px;margin:0 0 22px;border-radius:0 2px 2px 0;
+}
+.trap .label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--p-akami);display:block;margin-bottom:5px;
+}
+.trap p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.trap p+p{margin-top:8px}
+
+.note{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:14px 18px;margin:0 0 22px;font-size:14.5px;color:var(--ink-2);
+}
+.note b{color:var(--ink)}
+
+/* 実験パネル */
+.lab{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:18px;margin:0 0 24px;max-width:none;
+}
+.lab-title{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--ink-3);margin:0 0 14px;display:flex;align-items:center;gap:9px;
+}
+.lab-title::before{
+  content:"";width:9px;height:9px;border-radius:50%;background:var(--ch,#333);flex:none;
+}
+.lab-cols{display:grid;gap:20px}
+.lab-cols.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.lab-cols.side{grid-template-columns:minmax(0,300px) minmax(0,1fr)}
+.lab canvas{
+  display:block;width:100%;height:auto;background:var(--paper);
+  border:1px solid var(--grid-strong);border-radius:2px;touch-action:none;
+}
+.controls{display:flex;flex-direction:column;gap:12px}
+.ctrl{display:flex;flex-direction:column;gap:5px}
+.ctrl label{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-2);
+  display:flex;justify-content:space-between;gap:8px;letter-spacing:.03em;
+}
+.ctrl label .v{color:var(--ink-3)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:2px;
+  background:var(--grid-strong);border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--ch,#333);cursor:pointer;border:2px solid var(--paper-2);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;background:var(--ch,#333);
+  cursor:pointer;border:2px solid var(--paper-2);
+}
+input[type=number],select{
+  font-family:var(--font-mono);font-size:13px;padding:6px 8px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink);border-radius:2px;
+}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font-family:var(--font-mono);font-size:11.5px;padding:6px 11px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink-2);border-radius:2px;cursor:pointer;transition:.12s;
+}
+.chip:hover{border-color:var(--ink-3)}
+.chip[aria-pressed=true]{background:var(--ch,#333);color:#fff;border-color:var(--ch,#333)}
+.chip:disabled,input:disabled{opacity:.45;cursor:not-allowed}
+.switch{
+  display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink-2);cursor:pointer;
+}
+.switch input{width:16px;height:16px;accent-color:var(--ch,#333);cursor:pointer}
+.readout{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);
+  background:var(--paper);border:1px solid var(--grid-strong);
+  padding:9px 11px;border-radius:2px;line-height:1.7;word-break:break-all;
+}
+.hint{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin:8px 0 0}
+
+/* 図鑑 */
+.catalog{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px;margin-top:8px;
+}
+.card{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:0;position:relative;overflow:hidden;
+}
+.card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--sw,#666);z-index:1;
+}
+/* 実行結果のサムネイル。切り出しの縦横比は料理ごとに違うので、
+   contain で収めて、余りは shot 側の背景色（＝そのシーンの背景）で埋める */
+.card .shot{
+  display:block;position:relative;aspect-ratio:16/10;overflow:hidden;
+  border-bottom:1px solid var(--grid-strong);
+}
+.card .shot img{
+  display:block;width:100%;height:100%;object-fit:contain;
+  transition:transform .35s ease;
+}
+.card .shot:hover img{transform:scale(1.04)}
+/* 写真はそのままサンプルを動かすリンク。押せると分かるように印を出す */
+.card .playmark{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.94);
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;
+  padding:8px 14px;border-radius:2px;
+  background:rgba(20,20,22,.82);color:#fff;
+  opacity:0;transition:opacity .18s ease,transform .18s ease;pointer-events:none;
+}
+.card .shot:hover .playmark,.card .shot:focus-visible .playmark{
+  opacity:1;transform:translate(-50%,-50%) scale(1);
+}
+.card .cardbody{display:block;padding:15px 16px}
+.card .acts{
+  display:flex;gap:14px;align-items:baseline;margin-top:11px;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;
+}
+.card .acts a{color:var(--ink-3);text-decoration:none;border-bottom:1px solid transparent}
+.card .acts a:hover{color:var(--accent);border-bottom-color:currentColor}
+.card .acts .run{color:var(--ink)}
+.card:hover{border-color:var(--ink-3)}
+.card h4{
+  font-family:var(--font-display);font-size:17px;margin:0 0 3px;font-weight:600;letter-spacing:.03em;
+}
+.card .fn{
+  font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);
+  margin:0 0 9px;letter-spacing:.02em;
+}
+.card p{font-size:13.5px;color:var(--ink-2);margin:0;line-height:1.7}
+.card .tag{
+  display:inline-block;margin-top:10px;
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;
+  color:var(--ink-3);border:1px solid var(--grid-strong);
+  padding:2px 7px;border-radius:2px;
+}
+
+/* サンプル実行ページ */
+.playbar{
+  display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.04em;
+  color:var(--ink-3);margin-bottom:10px;
+}
+.playbar #playState{color:var(--ink-2);margin-right:auto}
+.playbar #playState.bad{color:#b4321c}
+.playstage{
+  position:relative;width:100%;aspect-ratio:4/3;max-height:78vh;
+  background:#e9e9ea;border:var(--rule);border-radius:2px;overflow:hidden;
+}
+.playstage canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
+
+/* 用語表 */
+table{border-collapse:collapse;width:100%;font-size:14px;margin:0 0 22px}
+th,td{border-bottom:1px solid var(--grid-strong);padding:10px 12px;text-align:left;vertical-align:top}
+th{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-3);font-weight:400;
+}
+td:first-child{font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;color:var(--ink)}
+
+/* ロードマップ */
+.roadmap{list-style:none;padding:0;margin:0;counter-reset:step}
+.roadmap li{
+  display:flex;gap:16px;padding:13px 0;border-bottom:1px solid var(--grid-strong);align-items:baseline;
+}
+.roadmap .rn{
+  font-family:var(--font-mono);font-size:12px;color:var(--ink-3);
+  flex:none;width:34px;letter-spacing:.04em;
+}
+.roadmap .rt{flex:1}
+.roadmap .rt b{font-weight:600}
+.roadmap .rt span{display:block;font-size:13.5px;color:var(--ink-2)}
+
+footer{
+  border-top:var(--rule);margin-top:20px;padding:36px 0 60px;
+  font-size:13px;color:var(--ink-3);
+}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer b{color:var(--ink-2);font-weight:500}
+
+/* =========================================================
+   章ページまわり
+   ========================================================= */
+.crumbs{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-3);padding:26px 0 0;
+}
+.crumbs a{color:var(--ink-3);border-bottom:1px solid rgba(0,0,0,.12)}
+.crumbs a:hover{color:var(--ink);border-bottom-color:var(--ink-3)}
+.crumbs .sep{margin:0 8px;opacity:.5}
+
+/* 章ページでは章の上罫線を消し、余白を詰める */
+.page .chapter{border-top:0;padding-top:26px}
+
+/* 章のはじめの「3行まとめ」 */
+.recap{
+  border:var(--rule);border-left:5px solid var(--ch,#333);
+  background:var(--paper-2);border-radius:2px;
+  padding:16px 20px;margin:0 0 26px;max-width:none;
+}
+.recap .label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--ink-3);display:block;margin-bottom:9px;
+}
+.recap ul{margin:0;padding-left:1.2em}
+.recap li{margin-bottom:5px;font-size:14.5px;color:var(--ink-2)}
+.recap li:last-child{margin-bottom:0}
+.recap li b{color:var(--ink)}
+
+/* 章のおわりの「やってみよう」 */
+.try{
+  border:1px dashed var(--grid-strong);border-radius:2px;
+  background:rgba(255,255,255,.45);
+  padding:16px 20px;margin:28px 0 0;
+}
+.try .label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--ch,#333);display:block;margin-bottom:9px;
+}
+.try ol{margin:0;padding-left:1.3em}
+.try li{margin-bottom:7px;font-size:14.5px;color:var(--ink-2)}
+.try li:last-child{margin-bottom:0}
+
+/* 前後の章へ */
+.pager{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  border-top:var(--rule);margin-top:10px;padding:26px 0 8px;
+}
+.pager a{
+  border:var(--rule);border-radius:2px;background:var(--paper-2);
+  padding:14px 16px;display:block;color:var(--ink);
+}
+.pager a:hover{border-color:var(--ink-3);background:var(--paper-3)}
+.pager .dir{
+  display:block;font-family:var(--font-mono);font-size:10.5px;
+  letter-spacing:.16em;color:var(--ink-3);margin-bottom:4px;
+}
+.pager .ttl{font-family:var(--font-display);font-size:16px;letter-spacing:.02em}
+.pager .next{text-align:right}
+.pager .none{border:1px dashed var(--grid-strong);background:transparent;opacity:.45}
+
+/* トップページの章カード一覧 */
+.hub{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));
+  gap:14px;margin:0 0 10px;
+}
+.hubcard{
+  position:relative;display:block;overflow:hidden;
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:17px 18px 17px 22px;color:var(--ink);
+  transition:.14s;
+}
+.hubcard::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--ch,#666);
+}
+.hubcard:hover{background:var(--paper-3);border-color:var(--ink-3);transform:translateY(-1px)}
+.hubcard .no{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--ink-3);display:block;margin-bottom:6px;
+}
+.hubcard h3{
+  font-family:var(--font-display);font-weight:600;font-size:17.5px;
+  margin:0 0 7px;letter-spacing:.02em;line-height:1.45;
+}
+.hubcard p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.72}
+
+/* 「まず動かす」ページの手順 */
+.steps{list-style:none;padding:0;margin:0 0 26px;counter-reset:st}
+.steps>li{
+  counter-increment:st;position:relative;
+  padding:0 0 22px 52px;border-left:1px solid var(--grid-strong);
+  margin-left:16px;
+}
+.steps>li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps>li::before{
+  content:counter(st,decimal-leading-zero);
+  position:absolute;left:-17px;top:-2px;width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;background:var(--ch,#333);color:#fff;
+  font-family:var(--font-mono);font-size:12px;
+}
+.steps h3{margin:0 0 8px!important;font-size:17px}
+.steps p{margin:0 0 10px}
+
+/* 用語集の検索窓 */
+.termsearch{
+  width:100%;font-family:var(--font-body);font-size:15px;padding:11px 13px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink);border-radius:2px;margin:0 0 18px;
+}
+tr.hide{display:none}
+
+/* 図鑑のカードをリンクにする */
+a.card{
+  display:block;color:inherit;text-decoration:none;
+  border:var(--rule);transition:.14s;
+}
+a.card:hover{
+  border-color:var(--ink-3);background:var(--paper-3);transform:translateY(-1px);
+}
+a.card .more{
+  display:block;margin-top:11px;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--ink-3);
+}
+a.card:hover .more{color:var(--accent)}
+
+/* ソースビューア */
+.filechips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.viewer{
+  border:var(--rule);border-radius:2px;background:var(--paper-2);padding:12px;
+}
+.viewer-bar{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  flex-wrap:wrap;margin:0 0 10px;
+}
+.viewer-bar b{font-family:var(--font-mono);font-size:13px;color:var(--ink)}
+.viewer-bar .d{font-size:13px;color:var(--ink-2);flex:1 1 260px;min-width:0}
+.viewer-bar .meta{font-family:var(--font-mono);font-size:11px;color:var(--ink-3)}
+.viewer-bar #viewPlay{
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.05em;color:var(--ink);
+  border:var(--rule);border-radius:2px;padding:5px 10px;text-decoration:none;
+}
+.viewer-bar #viewPlay:hover{border-color:var(--accent);color:var(--accent)}
+
+/* 行番号つきのコード表示。
+   行番号は別の <pre> に出す。コード側に混ぜると全選択で一緒にコピーされる */
+.codewrap{
+  display:grid;grid-template-columns:auto minmax(0,1fr);
+  overflow:auto;max-height:min(72vh,760px);
+  background:#231B14;border-radius:2px;
+}
+.codewrap pre{
+  margin:0;background:transparent;border-radius:0;overflow:visible;
+  padding:14px 0;font-size:12.5px;line-height:1.75;
+}
+.codewrap .gutter{
+  position:sticky;left:0;z-index:1;
+  background:#1C160F;color:#6A5B49;text-align:right;
+  padding-left:14px;padding-right:12px;
+  -webkit-user-select:none;user-select:none;
+}
+.codewrap .code{padding-left:16px;padding-right:22px;color:#E4DCCE}
+.codewrap .code code{font:inherit;background:none;padding:0}
+
+/* =========================================================
+   レスポンシブ
+   ========================================================= */
+@media (max-width:860px){
+  .hero-grid{grid-template-columns:1fr;gap:28px}
+  .lab-cols.two,.lab-cols.side{grid-template-columns:1fr}
+  .chapter{padding:48px 0}
+  .chnum{width:46px;height:46px;font-size:16px}
+  .chapter-head{gap:14px}
+  body{font-size:15.5px}
+  .pager{grid-template-columns:1fr}
+  .pager .next{text-align:left}
+}
+
+/* 実験パネルは本文（70ch）より広げる。
+   スライダーとキャンバスを並べると、本文幅では窮屈になるため。 */
+@media (min-width:1040px){
+  .body .lab{width:min(920px,calc(100vw - 56px))}
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>たれは、色ではなく層 — たべもののつくりかた</title>
+<meta name="description" content="たれは、色ではなく層">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html" aria-current="page">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-sauce)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第13章</p>
+<section class="chapter" id="ch13" style="--ch:var(--p-sauce)">
+  <div class="chapter-head">
+    <div class="chnum">13<small>Glaze</small></div>
+    <div>
+      <h2>たれは、色ではなく層</h2>
+      <p class="sub">absorption — 厚みが色を決める</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>たれを茶色い<b>色として塗る</b>と、光沢のない茶色い卵になります。</li>
+        <li>実物のたれは<b>透明な層</b>で、厚いところほど濃い。色は厚みの結果です。</li>
+        <li>しかも<b>実体</b>です。垂れの輪郭・縁の厚み・たまりの膨らみがシルエットに出ます。</li>
+      </ul>
+    </div>
+
+    <p>
+      みたらし団子を作ります。飴色のたれを、アルベド（素の色）に茶色として塗る。
+      これが最初の版でした。花見団子.js の作り直しの記録に、こうあります。
+    </p>
+    <div class="note">
+      <b>「たれは『色』ではなく『透明な層』。飴色を albedo に塗ると、光沢の無い茶色い卵になる。
+      クリアコートの着色（吸収）で持たせると、薄い所は淡い琥珀、
+      厚い所は黒に近い赤褐色へ自然に分かれる」</b>
+    </div>
+    <p>
+      透明なものを光が通ると、進んだ距離に応じて吸収されます。これがランベルト・ベールの法則で、
+      残る光の量は <code>exp(−吸収係数 × 厚み)</code> です。
+      吸収係数を赤・緑・青で別々にすると、<b>厚みが変わるだけで色が変わります</b>。
+      たこ焼きのソースなら、単位厚みあたりの吸収が RGB で <code>[1.5, 3.2, 5.4]</code>。
+      青がいちばん吸われるので、薄いところは橙、厚いところは黒に近い赤褐色になります。
+    </p>
+    <figure>
+<pre><span class="c">// 5. TextureLab : ソースの色は「塗る」のではなく「解く」</span>
+<span class="k">const</span> EXT = [<span class="n">1.5</span>, <span class="n">3.2</span>, <span class="n">5.4</span>];   <span class="c">// 単位厚みあたりの吸収（RGB）</span>
+<span class="k">const</span> t = thickness(u, v);       <span class="c">// その場所のソースの厚み</span>
+<span class="k">for</span> (<span class="k">let</span> c = <span class="n">0</span>; c &lt; <span class="n">3</span>; c++) {
+    <span class="c">// 下地の色に、通った距離ぶんの吸収を掛ける</span>
+    out[c] = base[c] * Math.exp(-EXT[c] * t);
+}</pre>
+      <figcaption>たこ焼き.js。Babylon のクリアコート着色は薄いところで数値的に破綻するので、CPU で解いて焼く</figcaption>
+    </figure>
+
+    <div class="lab" id="lab13">
+      <p class="lab-title">実験 — 塗る / 層として解く</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <label class="switch"><input type="checkbox" id="glazePaint">アルベドに茶色を塗る（昔の版）</label>
+          <div class="ctrl">
+            <label for="glazeThick">たれの厚み<span class="v" id="glazeThickV">0.45</span></label>
+            <input type="range" id="glazeThick" min="0" max="1" step="0.01" value="0.45">
+          </div>
+          <div class="ctrl">
+            <label for="glazeCover">掛かる範囲<span class="v" id="glazeCoverV">0.62</span></label>
+            <input type="range" id="glazeCover" min="0" max="1" step="0.01" value="0.62">
+          </div>
+          <label class="switch"><input type="checkbox" id="glazeBody" checked>厚みを形にも出す</label>
+          <div class="readout" id="glazeOut">—</div>
+        </div>
+        <canvas id="glazeCanvas" width="640" height="360" aria-label="みたらしのたれを層として解く実験"></canvas>
+      </div>
+      <p class="hint">
+        「塗る」に切り替えると、厚みを変えても色が変わりません。
+        だから、いくら濃くしても「濃い茶色に塗ったもの」にしか見えなくなります。
+      </p>
+    </div>
+
+    <h3>たれは全面を覆わない</h3>
+    <p>
+      上から掛けたたれは、下へ流れて、途中で止まります。止まった線から下は、
+      白い生地が出たままです。<b>全面を覆うと、たれではなくコーティングになります</b>。
+      たこ焼きのソースも同じで、垂れの輪郭がシルエットに出て初めてソースになる。
+      アルベドに茶色を描くだけだと、ハイライトが玉全体で一様のままなので、印刷したように見えます。
+    </p>
+
+    <h3>液体の面は、下の肌理を埋める</h3>
+    <p>
+      これも見落としやすい点です。生地の表面はざらざらしていますが、
+      その上をたれが流れると、<b>細かい凹凸は埋まって平らになります</b>。
+      たれの上を粗いままにしておくと、たれではなく「茶色い塗装」になります。
+      13章でやることは、結局この3つに集約されます。
+    </p>
+    <ul>
+      <li>色は<b>厚みから解く</b>（吸収）</li>
+      <li>厚みを<b>形にも出す</b>（縁の盛り上がり、たまりの膨らみ）</li>
+      <li>たれの下の<b>粗さと法線を上書きする</b>（平らにする）</li>
+    </ul>
+
+    <h3>艶にも、ムラが要る</h3>
+    <p>
+      たれを一様に光らせると、プラスチックの成型品になります。
+      たこ焼き.js のコメント：<b>「乾きかけた縁はざらつき、たまりだけが鏡になる」</b>。
+      同じソースの中で、粗さが場所ごとに違う。
+      07章で「粗さは1つの数値ではなく1枚の画像」と言ったのは、ここに効いてきます。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>クリアコートの着色は、厚み 0 のところで壊れます。</b>
+      Babylon.js のクリアコート着色は、浅い入射角と厚み 0 の組み合わせで数値的に破綻します。
+      団子シリーズ4本とも、着色をエンジンに任せず<b>CPU で吸収を解いてテクスチャに焼く</b>方針をとっています。
+      「エンジンの機能があるから使う」ではなく、壊れない側を選ぶ、という判断です。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「塗る」に切り替えて厚みを動かし、色が変わらないことを確かめる。</li>
+        <li>層のまま厚みを 1.0 にして、いちばん厚い所が何色になるか見る。</li>
+        <li>「厚みを形にも出す」を切り、シルエットの違いを見比べる。</li>
+        <li>花見団子.js で「たれ」を検索し、たれが止まる線をどう決めているか読む。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch12.html"><span class="dir">← まえの章</span><span class="ttl">12 焼き色は、形と相関している</span></a>
+    <a class="next" href="ch14.html"><span class="dir">つぎの章 →</span><span class="ttl">14 透けないと、食べ物に見えない</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

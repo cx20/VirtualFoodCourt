@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模様も、その場で描く — たべもののつくりかた</title>
+<meta name="description" content="模様も、その場で描く">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html" aria-current="page">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-kitsune)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第06章</p>
+<section class="chapter" id="ch06" style="--ch:var(--p-kitsune)">
+  <div class="chapter-head">
+    <div class="chnum">06<small>Texture</small></div>
+    <div>
+      <h2>模様も、その場で描く</h2>
+      <p class="sub">procedural texture — UV とテクスチャ生成</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>立体の表面と画像を対応づける座標を <b>UV</b> といいます。u が横、v が縦。</li>
+        <li>このプロジェクトは画像を1枚も読み込まず、<b>1ピクセルずつ計算して描いて</b>います。</li>
+        <li>描くのは色（アルベド）だけではありません。<b>光り方</b>と<b>凹凸</b>も別の画像として描きます。</li>
+      </ul>
+    </div>
+
+    <p>
+      立体ができたら、表面に模様を貼ります。そのために、
+      立体の表面のどの点が画像のどの点に対応するかを決めておきます。これが <b>UV</b> です。
+      回転体なら簡単で、<b>u は一周した角度、v は下から上への位置</b>にすればよい。
+      05章で <code>uvs.push(j / M, t)</code> と書いていたのがそれです。
+    </p>
+    <p>
+      次に画像を用意します。ふつうは写真を読み込みますが、このプロジェクトは
+      <code>RawTexture</code> という「生の数値の配列」を作って、
+      <b>1ピクセルずつ色を計算して詰めます</b>。トーストの焼き色なら、
+      その位置のノイズを見て、焼けていれば茶色、焼けていなければ白、というふうに。
+    </p>
+    <figure>
+<pre><span class="c">// 5. TextureLab : 焼き色を1ピクセルずつ描く（トースト.js の考え方）</span>
+<span class="k">const</span> data = <span class="k">new</span> Uint8Array(S * S * <span class="n">4</span>);
+<span class="k">for</span> (<span class="k">let</span> y = <span class="n">0</span>; y &lt; S; y++) <span class="k">for</span> (<span class="k">let</span> x = <span class="n">0</span>; x &lt; S; x++) {
+    <span class="k">const</span> u = x / S, v = y / S;
+    <span class="k">const</span> n = fbm(u * <span class="n">6</span>, v * <span class="n">6</span>, <span class="n">21</span>, <span class="n">5</span>);        <span class="c">// 焼きムラ</span>
+    <span class="k">const</span> heat = clamp(bake * <span class="n">1.4</span> + (n - <span class="n">0.5</span>) * <span class="n">0.6</span>, <span class="n">0</span>, <span class="n">1</span>);
+    <span class="k">const</span> c = heat &lt; <span class="n">0.5</span> ? mix3(CRUMB, CBR1, heat * <span class="n">2</span>)
+                        : mix3(CBR1,  CBR3, heat * <span class="n">2</span> - <span class="n">1</span>);
+    <span class="k">const</span> i = (y * S + x) * <span class="n">4</span>;
+    data[i] = c[<span class="n">0</span>] * <span class="n">255</span>; data[i+<span class="n">1</span>] = c[<span class="n">1</span>] * <span class="n">255</span>;
+    data[i+<span class="n">2</span>] = c[<span class="n">2</span>] * <span class="n">255</span>; data[i+<span class="n">3</span>] = <span class="n">255</span>;
+}</pre>
+      <figcaption>1024×1024 なら100万回まわる。実行に数秒かかるのはこのため</figcaption>
+    </figure>
+
+    <h3>1枚では足りない。3枚要る</h3>
+    <p>
+      色の画像（<b>アルベド</b>）だけを貼っても、まだ紙に印刷したように見えます。
+      同じトーストでも、白いところはざらついて光を散らし、焦げたところは少し光る。
+      その差を伝えるのが2枚目の <b>ORM</b> です。
+      R に陰り（AO）、G に粗さ（Roughness）、B に金属度（Metallic）を詰めた1枚の画像で、
+      3つの情報を3つの色チャンネルに同居させています。
+    </p>
+    <p>
+      3枚目が<b>法線マップ</b>。細かい凹凸を、頂点を増やさずに表現します。
+      本当は平らなのに、法線だけを傾けて「でこぼこしている」と光に嘘をつく。
+      トーストの気泡の縁も、クッキーの型押しも、これでやっています。
+    </p>
+
+    <div class="lab" id="lab06">
+      <p class="lab-title">実験 — 3枚の画像を描き分ける</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="texMap">
+            <button class="chip" type="button" data-v="albedo" aria-pressed="true">色（アルベド）</button>
+            <button class="chip" type="button" data-v="rough">粗さ（ORM の G）</button>
+            <button class="chip" type="button" data-v="normal">凹凸（法線マップ）</button>
+          </div>
+          <div class="ctrl">
+            <label for="texBake">焼き加減<span class="v" id="texBakeV">0.45</span></label>
+            <input type="range" id="texBake" min="0" max="1" step="0.01" value="0.45">
+          </div>
+          <div class="ctrl">
+            <label for="texPore">す（気泡）の多さ<span class="v" id="texPoreV">0.50</span></label>
+            <input type="range" id="texPore" min="0" max="1" step="0.01" value="0.5">
+          </div>
+          <label class="switch"><input type="checkbox" id="texApplyOn" checked>立体に貼ってみる</label>
+        </div>
+        <canvas id="texCanvas" width="640" height="340" aria-label="トーストのテクスチャ3枚と、それを貼った立体"></canvas>
+      </div>
+      <p class="hint">
+        左が焼いている画像そのもの、右がそれを貼った結果。
+        「粗さ」の画像は、白いほどざらざら（光らない）という意味です。
+      </p>
+    </div>
+
+    <h3>継ぎ目をなくす</h3>
+    <p>
+      筒に模様を巻くと、一周して戻ったところで模様がぶつかります。
+      03章で出てきた「u 方向に折り返すノイズ」はこのためのものです。
+      さらに、05章で分割の列を M+1 本にしていたのも同じ理由で、
+      <b>u=0 の頂点と u=1 の頂点を別々に持たせないと、継ぎ目の面で模様が逆走します</b>。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>法線マップの上下の符号は、環境によって逆です。</b>
+      高さの画像から法線を作るとき、縦方向の差を <code>(hd - hu)</code> と書くか
+      <code>(hu - hd)</code> と書くかで、凸が凹に化けます。
+      Babylon.js は V が下向きなので前者。13本のうち5本のコメントに、
+      この符号を間違えて直した記録が残っています。</p>
+      <p><b>1mm の粒は、テクスチャでは描けません。</b>
+      たこ焼きの青のりを緑の点として描くと、遠くから見たときミップマップで溶けて
+      「緑がかった靄」になります。たこ焼き.js が青のりを板ポリゴンの実体として置いているのは、
+      それが理由です（→ <a href="ch09.html">09章</a>）。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>焼き加減を 0 から 1 まで動かし、3枚の画像がそれぞれどう変わるか見比べる。</li>
+        <li>「粗さ」だけを見て、焦げた部分と白い部分のどちらが明るいか確かめ、その理由を考える。</li>
+        <li>「立体に貼ってみる」を切り、画像だけを見たときに何の模様か分かるか試す。</li>
+        <li>トースト.js の TextureLab を開き、1枚のテクスチャに何色が混ぜられているか数える。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch05.html"><span class="dir">← まえの章</span><span class="ttl">05 三角形の向きと、面の傾き</span></a>
+    <a class="next" href="ch07.html"><span class="dir">つぎの章 →</span><span class="ttl">07 「照り」「ぬれ」「粉っぽさ」を数値で言う</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

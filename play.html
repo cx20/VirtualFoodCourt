@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプルを動かす — たべもののつくりかた</title>
+<meta name="description" content="選んだサンプルをその場で実行します">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/play.js" defer></script>
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html" aria-current="page">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-kitsune)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span><a href="zukan.html">図鑑</a><span class="sep">/</span>実行</p>
+  <section class="chapter" id="play" style="--ch:var(--p-kitsune);padding-top:26px">
+    <div class="chapter-head">
+      <div class="chnum" style="font-size:13px">RUN<small style="opacity:.7">PLAY</small></div>
+      <div>
+        <h2 id="playTitle">—</h2>
+        <p class="sub">このページで、サンプルがそのまま動いています</p>
+      </div>
+    </div>
+    <div class="body" style="max-width:none">
+      <div class="playbar">
+        <span id="playState">準備中…</span>
+        <a id="playSrc" href="view.html">ソースを読む →</a>
+        <a id="playRaw" href="#" target="_blank" rel="noopener">.js を直接開く ↗</a>
+        <a href="zukan.html">図鑑へ戻る</a>
+      </div>
+      <div class="playstage" id="playStage">
+        <canvas id="playCanvas" touch-action="none"></canvas>
+      </div>
+      <p class="hint" style="margin-top:10px">
+        3Dモデルも写真も読み込んでいません。このページを開いた瞬間に、
+        座標も焼き色も計算で作られています。1024×1024 のテクスチャを何枚も焼くので、
+        出てくるまで十数秒かかることがあります。
+        右下のつまみで種類や焼き加減を変えると、その場で作り直されます。
+      </p>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

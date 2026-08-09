@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>粒を1400個置いて、谷を暗くする — たべもののつくりかた</title>
+<meta name="description" content="粒を1400個置いて、谷を暗くする">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html" aria-current="page">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-gin)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第15章</p>
+<section class="chapter" id="ch15" style="--ch:var(--p-gin)">
+  <div class="chapter-head">
+    <div class="chnum">15<small>Grains</small></div>
+    <div>
+      <h2>粒を1400個置いて、谷を暗くする</h2>
+      <p class="sub">baked ambient occlusion — 擬似AOの焼き込み</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>茶碗一杯のごはんは、<b>約1400粒</b>を1粒ずつ置いて作っています。</li>
+        <li>説得力を決めるのは粒の形ではなく、<b>粒と粒のあいだの暗がり</b>です。</li>
+        <li>その暗がりは <b>SSAO では出ません</b>。配置するときに計算して焼き込みます。</li>
+      </ul>
+    </div>
+
+    <p>
+      ごはんを描くとき、いちばん難しいのは1粒の形ではありません。
+      1粒だけを取り出すと、どのやり方でもそれなりに見えます。
+      難しいのは<b>集まったとき</b>で、粒間の暗がりが無いと、
+      ごはんは「発泡スチロールの塊」になります。
+    </p>
+    <p>
+      ふつう、こういう陰りは <b>SSAO</b>（画面空間アンビエントオクルージョン）という
+      後処理で付けます。ところが、ご飯.js はそれを使いません。理由がコメントに書いてあります。
+    </p>
+    <div class="note">
+      <b>「SSAO が拾えるのは画面空間で隣接している面の陰りだけで、
+      ごはんの谷は深さ数ミリ・幅数ミリの密集した溝なので、
+      半径を合わせると今度は粒の輪郭が全部汚れる」</b>
+    </div>
+    <p>
+      そこで別の手を使います。粒を配置するときに、
+      <b>その粒が近傍の最高点からどれだけ沈んでいるか</b>を計算し、
+      その値をインスタンスの色として書き込む。沈んでいる粒ほど暗い色を持たせるわけです。
+      描画時のコストはゼロで、しかも粒の形に沿って正確に暗くなります。
+    </p>
+    <figure>
+<pre><span class="c">// 9. Grains : 配置と「粒間の暗がり」の焼き込み</span>
+<span class="k">const</span> hi = neighborMaxHeight(x, z);        <span class="c">// 近傍でいちばん高い粒の頭</span>
+<span class="k">const</span> sink = clamp((hi - y) / depth, <span class="n">0</span>, <span class="n">1</span>); <span class="c">// どれだけ沈んでいるか</span>
+<span class="k">const</span> k = mix(<span class="n">1.0</span>, aoFloor, sink);          <span class="c">// aoFloor = いちばん深い谷の明るさ</span>
+colors.push(k, k, k, <span class="n">1</span>);                    <span class="c">// インスタンスカラーへ</span></pre>
+      <figcaption>ご飯.js。GUI の「粒間の暗がり」スライダーは aoFloor を動かしている</figcaption>
+    </figure>
+
+    <div class="lab" id="lab15">
+      <p class="lab-title">実験 — 粒間の暗がりを、切る / 入れる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="grainN">粒の数<span class="v" id="grainNV">420</span></label>
+            <input type="range" id="grainN" min="60" max="900" step="20" value="420">
+          </div>
+          <div class="ctrl">
+            <label for="grainAo">いちばん深い谷の明るさ<span class="v" id="grainAoV">0.52</span></label>
+            <input type="range" id="grainAo" min="0.1" max="1" step="0.01" value="0.52">
+          </div>
+          <div class="ctrl">
+            <label for="grainDepth">暗がりの届く深さ<span class="v" id="grainDepthV">0.55</span></label>
+            <input type="range" id="grainDepth" min="0.1" max="1.5" step="0.01" value="0.55">
+          </div>
+          <div class="readout" id="grainOut">—</div>
+        </div>
+        <canvas id="grainCanvas" width="640" height="360" aria-label="米粒の集まりと粒間の暗がりの実験"></canvas>
+      </div>
+      <p class="hint">
+        谷の明るさを 1.0 にすると暗がりが消えます。粒の形も数も同じなのに、
+        急にごはんに見えなくなるのが分かります。
+      </p>
+    </div>
+
+    <h3>近傍の「最高点」を使う理由</h3>
+    <p>
+      沈み具合を測るとき、近傍の<b>平均</b>の高さと比べるとうまくいきません。
+      ご飯.js のコメントに「最高点と同じ高さになり、暗がりがまったく出ない」という
+      注意が残っています。平均と比べると、山の粒も谷の粒も同じくらいの差になってしまうからです。
+      比べる相手は<b>いちばん高い粒</b>でなければいけません。
+    </p>
+
+    <h3>握ると、沈み込みが浅くなる</h3>
+    <p>
+      お寿司.js は、ご飯.js の米粒・マテリアル・暗がりの焼き込みを<b>そのまま流用</b>しています。
+      変わるのは盛りの形（茶碗の山 → 俵）だけ……ではありません。
+      酢飯は握って締めるので、<b>粒の沈み込みが浅くなります</b>。
+      同じ仕組みのまま、パラメータ1つで「ふんわり」と「締まっている」を作り分けています。
+      この考え方は<a href="ch17.html">17章</a>につながります。
+    </p>
+
+    <h3>1400 という数</h3>
+    <p>
+      茶碗一杯は実際には数千粒あります。1400 は、見た目が破綻しない下限として選ばれた数です。
+      表面から見えない粒は置かないので、実際には「表面から2〜3層ぶん」だけ配置しています。
+      中身は<b>盛りの形（Mound）</b>という1枚の曲面で塞いであり、粒はその上に生えています。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>粒をランダムに置くだけでは、ごはんになりません。</b>
+      向きが完全にばらばらだと「もみ殻の山」に見えます。
+      実物は表面に沿って寝ている粒が多い。盛りの曲面の法線を使って、
+      粒の向きをある程度そちらへ倒しています。</p>
+      <p><b>インスタンスカラーは、ライティングの前に掛かります。</b>
+      焼き込んだ暗さは「その粒に届く光の量」を表しているので、
+      アルベドに掛けるのが正しい。あとから画面全体を暗くするのとは意味が違います。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>谷の明るさを 1.0 にして、ごはんが何に見えるか判定する。</li>
+        <li>粒の数を 60 まで減らして、どこから「ごはん」でなくなるか探す。</li>
+        <li>暗がりの届く深さを 1.5 にして、暗すぎるとどうなるか見る。</li>
+        <li>ご飯.js の GUI で「粒間の暗がり」を 0 にした画面と見比べる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch14.html"><span class="dir">← まえの章</span><span class="ttl">14 透けないと、食べ物に見えない</span></a>
+    <a class="next" href="ch16.html"><span class="dir">つぎの章 →</span><span class="ttl">16 触れ合うと、潰れる</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

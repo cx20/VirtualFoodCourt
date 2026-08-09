@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「似ているのに別物」を作り分ける — たべもののつくりかた</title>
+<meta name="description" content="「似ているのに別物」を作り分ける">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html" aria-current="page">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-akami)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第17章</p>
+<section class="chapter" id="ch17" style="--ch:var(--p-akami)">
+  <div class="chapter-head">
+    <div class="chnum">17<small>Variants</small></div>
+    <div>
+      <h2>「似ているのに別物」を作り分ける</h2>
+      <p class="sub">variants — 差分でつくるという設計</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>トーストとエッグトーストは、<b>同じプログラム</b>です。差分は数か所しかありません。</li>
+        <li>サンマと鮭も、団子3種も、チョコ8種も同じ骨格から作られています。</li>
+        <li>ただし<b>色を変えただけでは別物になりません</b>。何を変えると別物になるかが本題です。</li>
+      </ul>
+    </div>
+
+    <p>
+      13本のうち、いくつかは兄弟です。
+    </p>
+    <table>
+      <tr><th>組</th><th>共有しているもの</th><th>差分</th></tr>
+      <tr><td>トースト / エッグトースト</td><td>スライスの SDF・す（気泡）・耳・焦げ・皿</td><td>上面のくぼみ、卵、焼き分け</td></tr>
+      <tr><td>ご飯 / お寿司</td><td>米粒の形・マテリアル・粒間の暗がり</td><td>盛りの形（山 → 俵）、締め具合、ネタ</td></tr>
+      <tr><td>焼き魚（サンマ）/（鮭）</td><td>掃引・体表テクスチャ・皿・付け合わせ</td><td>一尾か切り身か、銀か橙か、筋節の場</td></tr>
+      <tr><td>花見団子 / 月見団子</td><td>生地の透過・法線の規約・影・被写界深度</td><td>串か積むか、たれの有無、接触の向き</td></tr>
+      <tr><td>クッキー（7種）/ チョコ（8種）</td><td>断面・焼き色・皿・物理</td><td>外形、厚み、トッピング、艶</td></tr>
+    </table>
+    <p>
+      共有しているほうが多い。これは偶然ではなく、
+      <b>01章で見た層構造がそうなっているから</b>です。
+      下の層（乱数・ノイズ・メッシュの道具）は料理を知らないので、そのまま使い回せます。
+    </p>
+
+    <div class="lab" id="lab17">
+      <p class="lab-title">実験 — トーストをエッグトーストにする</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <label class="switch"><input type="checkbox" id="diffWell">上面にくぼみを彫る</label>
+          <label class="switch"><input type="checkbox" id="diffEgg">卵を落とす</label>
+          <label class="switch"><input type="checkbox" id="diffBake">くぼみの中だけ焼きを弱める</label>
+          <label class="switch"><input type="checkbox" id="diffGloss">白身と黄身で艶を変える</label>
+          <div class="readout" id="diffOut">—</div>
+        </div>
+        <canvas id="diffCanvas" width="640" height="360" aria-label="トーストからエッグトーストへの差分の実験"></canvas>
+      </div>
+      <p class="hint">
+        「卵を落とす」だけを入れると、トーストの上に黄色い円が乗ります。
+        4つ全部を入れて初めてエッグトーストになります。
+      </p>
+    </div>
+
+    <h3>色だけを変えても、別物にはならない</h3>
+    <p>
+      いちばんよくある勘違いがこれです。
+      サンマを橙色にしても鮭にはなりません。サンマは<b>一尾まるごとの側扁した筒</b>、
+      鮭は<b>包丁で切った切り身</b>です。見えている面の成り立ちからして違います。
+    </p>
+    <p>
+      逆に、形を変えなくても別物になる組み合わせもあります。
+      ご飯とお寿司のシャリがそれで、盛りの形と締め具合という2つの数値だけで、
+      「ふんわり盛った白飯」と「握って締めた酢飯」に分かれます。
+    </p>
+
+    <h3>差分にすると、直しが全部に効く</h3>
+    <p>
+      設計としての利点はここです。
+      法線マップの V の符号を間違えていたことに気づいたとします。
+      13本に同じ間違いが独立して書かれていたら、13か所直すことになります。
+      実際には、団子シリーズ4本のコメントに
+      <b>「法線マップの V の符号は (yd − yu)。Babylon の接空間は V が下向き」</b>
+      と同じ注意が書き写されています。<b>1本で分かったことが、次の1本に持ち越されている</b>。
+    </p>
+    <p>
+      ファイルの先頭を読み比べると、これがよく分かります。
+      「団子版（dango-C）から引き継いだもの」「サクランボ版から引き継いだもの」
+      「ごはん.js の続き」——13本は独立した作品ではなく、1本の連続した記録です。
+    </p>
+
+    <h3>プリセットという形の差分</h3>
+    <p>
+      同じファイルの中の差分が<b>プリセット</b>です。
+      クッキー.js は7種類（サブレ / 市松 / うずまき / チョコチップ / 型押しビスケット /
+      クラッカー / 絞り出し）を、断面と外形の数値だけで作り分けています。
+    </p>
+    <figure>
+<pre><span class="c">// 0. CONFIG : 種類プリセット（クッキー.js）</span>
+sable: {
+    label: <span class="s">"サブレ"</span>, shape: <span class="s">"disc"</span>,
+    radius: <span class="n">2.55</span>, thickness: <span class="n">0.98</span>, dome: <span class="n">0.20</span>, rimBulge: <span class="n">0.88</span>,
+    crackAmt: <span class="n">0.30</span>, blister: <span class="n">0.0</span>, dockPitch: <span class="n">0</span>,
+    emboss: <span class="s">"none"</span>, sugarAmt: <span class="n">1.00</span>
+},</pre>
+      <figcaption>プリセットが増えても、下の層は1行も変わらない</figcaption>
+    </figure>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>乱数の幅は、料理ごとに変えなければいけません。</b>
+      クッキー.js のコメント：「工業製品なので個体差が小さい。
+      形の乱数を野菜と同じ幅で振ると『手びねりの粘土』になる。
+      乱数は外形 ±6%、厚み ±10% までに抑え、代わりに焼きムラと反りで単調さを消す」。
+      骨格を共有するということは、<b>数値の意味まで共有する</b>ことではありません。</p>
+    </div>
+
+    <h3>ここまで来たら</h3>
+    <p>
+      13本のうち好きな1本を選んで、<b>14本目を作ってみてください</b>。
+      いちばん近いものをコピーして、CONFIG のプリセットを1つ足すところから始めます。
+      おにぎり（ご飯 + 海苔）、ホットケーキ（クッキーの断面 + 焼き色）、
+      餃子（掃引 + ひだ）あたりが、既存の骨格に一番近い題材です。
+    </p>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>上の実験を4つとも切った状態から、1つずつ入れて変化を記録する。</li>
+        <li>「卵を落とす」だけを入れた状態が、なぜエッグトーストに見えないか説明する。</li>
+        <li>トースト.js とエッグトースト.js を並べて開き、違う行を探す。</li>
+        <li>14本目に作りたい料理を1つ決めて、13本のどれをコピー元にするか選ぶ。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch16.html"><span class="dir">← まえの章</span><span class="ttl">16 触れ合うと、潰れる</span></a>
+    <a class="next" href="zukan.html"><span class="dir">つぎの章 →</span><span class="ttl">図鑑 どのファイルで、何が学べるか</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

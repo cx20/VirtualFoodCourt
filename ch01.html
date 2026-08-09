@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「作る」と「読み込む」はどう違うのか — たべもののつくりかた</title>
+<meta name="description" content="「作る」と「読み込む」はどう違うのか">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html" aria-current="page">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-koge)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第01章</p>
+<section class="chapter" id="ch01" style="--ch:var(--p-koge)">
+  <div class="chapter-head">
+    <div class="chnum">01<small>CONFIG</small></div>
+    <div>
+      <h2>「作る」と「読み込む」はどう違うのか</h2>
+      <p class="sub">procedural generation — 手続き的生成</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ふつうの3Dは、誰かが作った<b>モデルファイルを読み込んで</b>表示します。</li>
+        <li>このプロジェクトは逆で、<b>実行した瞬間に座標も模様も計算で作ります</b>。これを手続き的生成といいます。</li>
+        <li>だから1個ずつ形が違い、焼き加減をあとから変えられ、しかもデータが軽い。</li>
+      </ul>
+    </div>
+
+    <p>
+      ゲームや映画に出てくる料理の3Dは、ふつう誰かが専用ソフトで作ったモデルファイルを読み込んで表示します。
+      ファイルの中には「頂点1番は(3.2, 1.1, 0.4)」といった座標が何万個も保存されていて、
+      表面の模様も写真として一緒に入っています。プログラムはそれを並べて画面に出すだけです。
+    </p>
+    <p>
+      このプロジェクトは逆のことをしています。ファイルも写真も読まず、
+      <b>プログラムを実行した瞬間に座標を計算で作り、模様も1ピクセルずつ計算で描く</b>。
+      これを手続き的生成（プロシージャル生成）と呼びます。
+      食べ物と相性がよく、いいことが3つあります。
+    </p>
+    <ul>
+      <li><b>1個も同じにならない</b> — 数値を少し揺らすだけで、形の違う個体がいくらでも出てきます。
+      たこ焼き8個が全部同じ形だと、その瞬間に嘘に見えます。</li>
+      <li><b>あとから変えられる</b> — 「もう少し焼く」がスライダー1本で通ります。
+      写真を貼る方式なら、焼き加減の数だけ写真を用意することになります。</li>
+      <li><b>軽い</b> — 13本ぜんぶ合わせて 1.3MB ほどのテキストだけです。
+      モデルファイルも、模様の写真も、1枚もありません。</li>
+    </ul>
+    <p>
+      その代わり、形や色を言葉ではなく<b>数式で説明できないと作れません</b>。
+      「たこ焼きってどんな形?」に
+      「下半分は型の写しでほぼ正確な半球、上半分は生地を折り込んだ不定形」と
+      答えられるかどうかが勝負になります。だからこのプロジェクトのコードは、
+      コメントの半分が食べ物の観察記録です。
+    </p>
+
+    <h3>ほとんどのファイルが、同じ9層でできている</h3>
+    <p>
+      トーストもクッキーも秋刀魚も、ファイルの構造はほとんど同じです。上から順に読めば、
+      どの料理でも同じ場所に同じ役割のコードがあります。
+      このサイトの第I部（01〜11章）は、この層に対応させてあります。
+    </p>
+    <figure>
+<pre><span class="c">// 構成:
+//    0. CONFIG      … プリセット（定番 / 全部のせ / 焦がし / 塩）と舟皿
+//    1. Rng         … シード付き擬似乱数
+//    2. Noise       … 3D値ノイズ / 2D周期ノイズ
+//    3. Mesh utils  … 巻き順の自動判定・法線の溶接・掃引
+//    4. Fields      … 球面方向の場 / 焼き色 / ソースの垂れの輪郭
+//    5. TextureLab  … 生地・ソース・木のアルベド / ORM / 法線
+//    6. Pattern     … 形状 + テクスチャ（4種のアトラス）
+//    7. Takoyaki    … 生地玉 + ソース + 青のり + マヨ + かつお節
+//    8. Tray        … 経木の舟皿 + 板の間 / 配置の緩和
+//    9. Scene / GUI</span></pre>
+      <figcaption>たこ焼き.js の冒頭。料理名のところが入れ替わるだけで、13本ともこの並び</figcaption>
+    </figure>
+    <p>
+      層の順番には理由があります。<b>下の層は上の層を知らなくても動く</b>ように積んであるからです。
+      乱数（1）はノイズ（2）を知らないし、ノイズは形（4）を知らない。
+      だから途中の1層だけ差し替えれば、別の料理になります。
+      それを実際にやったのが<a href="ch17.html">17章</a>です。
+    </p>
+
+    <div class="trap">
+      <span class="label">野菜のときと変わったところ</span>
+      <p>この教材には姉妹編（<b>やさいのつくりかた</b>）があり、そちらでは
+      <b>4. Profile</b>（横顔の折れ線）が形の中心にありました。
+      料理では、そこが <b>4. Fields</b> や <b>4. Section</b> という名前に変わっているファイルが多い。
+      野菜は「軸のまわりに回せば作れる」ものが多いのに対し、
+      料理は<b>切ってあったり、潰してあったり、垂れていたり</b>して、
+      回転体ではないものが増えるためです。</p>
+    </div>
+
+    <h3>「焼く」という工程が、そのままコードにある</h3>
+    <p>
+      野菜と料理のいちばん大きな違いはここです。料理には<b>火が通っている</b>。
+      その結果として、表面の色が場所ごとに違い、水分が飛び、艶が出て、形が変わる。
+      13本のうち9本は、焼いたり揚げたりしたものです。その9本には例外なく
+      <code>bake</code>（焼き加減）・<code>heat</code>（熱の回り）・<code>char</code>（焦げ）
+      という名前の変数があります。
+      焼き色は最後に上から塗る飾りではなく、<b>形と一緒に決まるもの</b>です。
+      それを扱うのが<a href="ch12.html">12章</a>です。
+    </p>
+    <div class="note">
+      <b>読む順番のおすすめ。</b>
+      最初の1本は<b>トースト.js</b>がいちばん素直です（四角い板に、す（気泡）を彫るだけ）。
+      次に<b>花見団子.js</b>、慣れたら<b>クッキー.js</b>。
+      <b>たこ焼き.js</b>と<b>ご飯.js</b>と<b>焼き魚（サンマ）.js</b>は分量が多いので後回しでかまいません。
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>トースト.js の先頭のコメント（構成 0〜9）を読んで、他のファイルにも同じ並びがあるか確かめる。</li>
+        <li>手続き的生成のいいところ3つを、自分の言葉で1行ずつ書いてみる。</li>
+        <li>13本のファイルを検索して、bake / heat / char という語がどのファイルに出てくるか調べ、「焼いた料理」と一致するか確かめる。</li>
+        <li>身のまわりの食べ物で「数式で説明できそうな形」を3つ探す（例：バウムクーヘン、マカロニ、板チョコ）。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="start.html"><span class="dir">← まえの章</span><span class="ttl">00 まず動かしてみる</span></a>
+    <a class="next" href="ch02.html"><span class="dir">つぎの章 →</span><span class="ttl">02 同じ種からは、同じ料理ができる</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

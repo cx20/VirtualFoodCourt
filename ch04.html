@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>断面を1枚描けば、立体になる — たべもののつくりかた</title>
+<meta name="description" content="断面を1枚描けば、立体になる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html" aria-current="page">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-sakura)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第04章</p>
+<section class="chapter" id="ch04" style="--ch:var(--p-sakura)">
+  <div class="chapter-head">
+    <div class="chnum">04<small>Shape</small></div>
+    <div>
+      <h2>断面を1枚描けば、立体になる</h2>
+      <p class="sub">profile / section — 断面と外形</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>団子も茶碗もクッキーも、<b>横顔の折れ線を1本</b>描いて、軸のまわりに回すだけで作れます。</li>
+        <li>回すのではなく<b>外形と縦断面を掛け合わせる</b>やり方もあります。チョコレートがそれです。</li>
+        <li>料理では「回せば作れる」ものが野菜より少ない。そこが野菜編との一番の違いです。</li>
+      </ul>
+    </div>
+
+    <p>
+      団子を作りたいとします。3Dの球を置いて潰す、ではありません。
+      まず紙に<b>縦に切った断面の右半分</b>を描きます。下から上へ、
+      中心からの距離（半径）が場所ごとにいくつになるかを並べた表です。
+      これを軸のまわりに1周ぶん回せば、立体ができます。これを<b>回転体</b>といいます。
+    </p>
+    <figure>
+<pre><span class="c">// 4. Section : 茶碗の断面（ご飯.js）
+//    t は下から上、r は中心からの距離。単位は cm</span>
+<span class="k">const</span> PROFILE = [
+    { t: <span class="n">0.00</span>, r: <span class="n">1.75</span> },   <span class="c">// 高台の底</span>
+    { t: <span class="n">0.10</span>, r: <span class="n">1.72</span> },
+    { t: <span class="n">0.16</span>, r: <span class="n">2.30</span> },   <span class="c">// 高台から胴へ立ち上がる</span>
+    { t: <span class="n">0.45</span>, r: <span class="n">4.60</span> },
+    { t: <span class="n">0.80</span>, r: <span class="n">5.90</span> },
+    { t: <span class="n">1.00</span>, r: <span class="n">6.15</span> }    <span class="c">// 口縁</span>
+];</pre>
+      <figcaption>点は10個前後で足りる。あいだはなめらかな曲線で補う</figcaption>
+    </figure>
+    <p>
+      点と点のあいだは直線でつなぐと角ばるので、<b>Catmull-Rom スプライン</b>という曲線で補います。
+      「4つの点を見て、真ん中の2点のあいだをなめらかに通る」曲線です。
+      これで、10個の数字から曲面ができます。
+    </p>
+
+    <div class="lab" id="lab04">
+      <p class="lab-title">実験 — 断面を引っぱると、立体が変わる</p>
+      <div class="lab-cols two">
+        <div>
+          <canvas id="profCanvas" width="330" height="330" aria-label="断面の制御点をドラッグして形を変える"></canvas>
+          <p class="hint">白い点を左右にドラッグ。これが半径の表です。</p>
+        </div>
+        <div>
+          <canvas id="revCanvas" width="330" height="330" aria-label="断面を回転させた立体のプレビュー"></canvas>
+          <p class="hint">その断面を1周ぶん回した結果。</p>
+        </div>
+      </div>
+      <div class="chips" id="profPreset" style="margin-top:14px">
+        <button class="chip" type="button" data-v="dango" aria-pressed="true">団子</button>
+        <button class="chip" type="button" data-v="bowl">茶碗</button>
+        <button class="chip" type="button" data-v="cookie">クッキー</button>
+        <button class="chip" type="button" data-v="tako">たこ焼き</button>
+      </div>
+      <div class="ctrl" style="margin-top:12px;max-width:320px">
+        <label for="profBump">手のあとの凹凸<span class="v" id="profBumpV">0.10</span></label>
+        <input type="range" id="profBump" min="0" max="0.4" step="0.01" value="0.1">
+      </div>
+      <p class="hint">
+        凹凸を 0 にすると工業製品、上げすぎると手びねりの粘土になります。
+        料理ごとに「ちょうどよい」量が違うのが面白いところです。
+      </p>
+    </div>
+
+    <h3>回転体では作れないものがある</h3>
+    <p>
+      チョコレートのボンボンは、上から見ると丸や四角やハート、横から見るとドームです。
+      これは回転体ではありません。チョコレート.js は
+      <b>外形（上から見た輪郭）</b>と<b>縦断面（横から見た形）</b>を別々に定義して、掛け合わせています。
+    </p>
+    <figure>
+<pre><span class="c">// 4. Shape : 外形（スーパー楕円）× 縦断面（赤道式）</span>
+<span class="c">// 上から見た輪郭。n を上げると四角に、下げると星形に近づく</span>
+<span class="k">const</span> outline = (a) =&gt; <span class="n">1</span> / Math.pow(
+    Math.pow(Math.abs(Math.cos(a)), n) + Math.pow(Math.abs(Math.sin(a)), n),
+    <span class="n">1</span> / n);
+<span class="c">// 高さ v での「赤道からの縮み」。1 なら外形そのまま</span>
+<span class="k">const</span> shrink = (v) =&gt; Math.sqrt(Math.max(<span class="n">0</span>, <span class="n">1</span> - v * v));
+<span class="k">const</span> radius = (a, v) =&gt; outline(a) * shrink(v);</pre>
+      <figcaption>チョコレート.js のやり方。輪郭と断面を掛けるだけで、丸も角丸四角もハートも作れる</figcaption>
+    </figure>
+    <p>
+      さらに、まったく回らないものもあります。トーストは<b>四角い板</b>ですし、
+      鮭の切り身は<b>包丁で切った断面と皮</b>でできています。
+      これらは「上から見た輪郭を関数で書き、その中を格子で埋める」という作り方をします。
+      形の作り方は、料理の作られ方についてきます。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>断面の両端は、きちんと 0 まで絞ってください。</b>
+      団子の上下を半径 0.2 で止めると、そこが穴になって中が見えます。
+      回転体には自動でフタが付かないからです。</p>
+      <p><b>同じ高さに半径を2つ置けません。</b>
+      「t → r」の表は、ひとつの高さにひとつの半径しか持てません。
+      茶碗の口縁のように<b>外へ張り出してから下に折り返す</b>形は、
+      (t, r) の2列ではなく (r, y) の2列で持つ必要があります。
+      ご飯.js の茶碗がそうなっています。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「団子」の真ん中の点を外へ引っぱって、たこ焼きに近づけてみる。</li>
+        <li>「茶碗」のいちばん上の点を内側へ入れて、壺にしてみる。</li>
+        <li>凹凸を 0.4 にしたとき、どの料理なら許せてどれが嘘に見えるか決める。</li>
+        <li>チョコレート.js の n（スーパー楕円の指数）を探し、値を変えると外形がどう変わるか予想する。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch03.html"><span class="dir">← まえの章</span><span class="ttl">03 焼きムラは、なめらかな乱数でできている</span></a>
+    <a class="next" href="ch05.html"><span class="dir">つぎの章 →</span><span class="ttl">05 三角形の向きと、面の傾き</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

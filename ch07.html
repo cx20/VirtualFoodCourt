@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「照り」「ぬれ」「粉っぽさ」を数値で言う — たべもののつくりかた</title>
+<meta name="description" content="「照り」「ぬれ」「粉っぽさ」を数値で言う">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html" aria-current="page">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-choco)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第07章</p>
+<section class="chapter" id="ch07" style="--ch:var(--p-choco)">
+  <div class="chapter-head">
+    <div class="chnum">07<small>PBR</small></div>
+    <div>
+      <h2>「照り」「ぬれ」「粉っぽさ」を数値で言う</h2>
+      <p class="sub">physically based rendering — 物理ベースの質感</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>PBR では、質感を<b>粗さ</b>・<b>金属度</b>・<b>透け</b>などの数値の組で表します。</li>
+        <li>食べ物でいちばん効くのは<b>粗さ</b>と、上に乗った透明な膜（<b>クリアコート</b>）です。</li>
+        <li>「おいしそう」は、たいてい<b>膜の艶</b>と<b>光の通り</b>の2つで決まります。</li>
+      </ul>
+    </div>
+
+    <p>
+      同じ形の団子でも、艶があれば茹でたて、粉をふいていれば時間が経っている。
+      その差を、絵ではなく<b>数値</b>で言えるようにしたのが PBR です。
+      色（アルベド）とは別に、次のような数値を面ごとに持たせます。
+    </p>
+    <table>
+      <tr><th>数値</th><th>意味</th><th>この13本での使いどころ</th></tr>
+      <tr><td>roughness</td><td>表面のざらつき。0 で鏡、1 で完全につや消し</td><td>ほぼ全部。焼けた所とそうでない所で必ず変える</td></tr>
+      <tr><td>metallic</td><td>金属かどうか。食べ物はふつう 0</td><td>秋刀魚の銀でも 0.22 までしか上げない</td></tr>
+      <tr><td>clearCoat</td><td>上に乗った透明な膜。ワックスや水の膜</td><td>たれ・ソース・米の水膜・チョコの艶</td></tr>
+      <tr><td>subSurface</td><td>光が中に入って散る。厚みで色が変わる</td><td>団子・赤身・大根おろし・米</td></tr>
+      <tr><td>sheen</td><td>布のような、縁がふわっと光る反射</td><td>かつお節・大根おろし・衣</td></tr>
+      <tr><td>iridescence</td><td>薄い膜の干渉で出る虹色</td><td>秋刀魚の銀（構造色）</td></tr>
+    </table>
+
+    <div class="lab" id="lab07">
+      <p class="lab-title">実験 — 粗さ・膜・透けを動かす</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="pbrPreset">
+            <button class="chip" type="button" data-v="dango" aria-pressed="true">団子</button>
+            <button class="chip" type="button" data-v="choco">チョコ</button>
+            <button class="chip" type="button" data-v="wiener">ウィンナー</button>
+            <button class="chip" type="button" data-v="rice">ごはん</button>
+          </div>
+          <div class="ctrl">
+            <label for="pbrRough">粗さ roughness<span class="v" id="pbrRoughV">0.40</span></label>
+            <input type="range" id="pbrRough" min="0.03" max="1" step="0.01" value="0.4">
+          </div>
+          <div class="ctrl">
+            <label for="pbrCoat">膜の強さ clearCoat<span class="v" id="pbrCoatV">0.30</span></label>
+            <input type="range" id="pbrCoat" min="0" max="1" step="0.01" value="0.3">
+          </div>
+          <div class="ctrl">
+            <label for="pbrSss">透け subSurface<span class="v" id="pbrSssV">0.20</span></label>
+            <input type="range" id="pbrSss" min="0" max="1" step="0.01" value="0.2">
+          </div>
+          <div class="readout" id="pbrOut">—</div>
+        </div>
+        <canvas id="pbrCanvas" width="640" height="360" aria-label="粗さ・クリアコート・透けを変える実験"></canvas>
+      </div>
+      <p class="hint">
+        粗さを 0.05 まで下げると、どの料理もプラスチックの成型品になります。
+        食べ物の艶は「鋭い」のではなく「広くにじむ」ものです。
+      </p>
+    </div>
+
+    <h3>粗さは、一様であってはいけない</h3>
+    <p>
+      いちばんよくある失敗が、粗さを1つの数値で決めてしまうことです。
+      たこ焼き.js のコメントにこうあります。
+      <b>「均一な鏡面はプラスチックの成型品。乾きかけた縁はざらつき、たまりだけが鏡になる」</b>。
+      ソースの艶にムラを入れて初めてソースに見える。
+      だから粗さは1つの数値ではなく、06章で作った<b>1枚の画像</b>として持たせます。
+    </p>
+
+    <h3>クリアコートは、掛け算で効く</h3>
+    <p>
+      クリアコートは「下地の上に透明な膜を1枚のせる」機能です。
+      強さ（intensity）と、その膜自体の粗さ（roughness）を別々に持ちます。
+      ここで初心者が必ずはまるのが、<b>強さを上げると下地まで一緒に明るくなる</b>ことです。
+      膜が反射した光と、下地から返ってきた光が足し算されるためで、
+      黒いチョコレートに強い膜をかけると、真っ黒なのに白く光る妙なものになります。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>粗さ 0.055 は車の塗装の値です。</b>
+      ご飯.js に、米粒の水膜をこの値にしたときの記録が残っています。
+      「この鋭さだと1粒に1つ小さな鏡ができ、白い錠剤が並んでいるように見える。
+      炊飯米の水膜はもっと広くにじんだ照りになる」。実測ではなく<b>見え方</b>で決めています。</p>
+      <p><b>metallic を上げてはいけません。</b>
+      秋刀魚の銀色は色素ではなく、グアニンの結晶による構造色（薄膜干渉）です。
+      metallic を上げると「魚の形をしたスプーン」になります。
+      焼き魚（サンマ）.js は metallic を 0.42 から 0.22 に落とし、
+      代わりに iridescence（虹彩）を使うように直した経緯が書かれています。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「チョコ」を選び、粗さを 0.03 にして、食べ物に見えるかどうか判定する。</li>
+        <li>「団子」で透けを 0 にすると何に見えるか、言葉にしてみる（石膏か消しゴム）。</li>
+        <li>膜の強さを上げたとき、下地の色が変わって見えるかどうか確かめる。</li>
+        <li>焼き魚（サンマ）.js で iridescence を検索し、なぜ metallic ではないのか読む。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch06.html"><span class="dir">← まえの章</span><span class="ttl">06 模様も、その場で描く</span></a>
+    <a class="next" href="ch08.html"><span class="dir">つぎの章 →</span><span class="ttl">08 盛り付けは、手で置かない</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

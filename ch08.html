@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>盛り付けは、手で置かない — たべもののつくりかた</title>
+<meta name="description" content="盛り付けは、手で置かない">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html" aria-current="page">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-karaage)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第08章</p>
+<section class="chapter" id="ch08" style="--ch:var(--p-karaage)">
+  <div class="chapter-head">
+    <div class="chnum">08<small>Havok</small></div>
+    <div>
+      <h2>盛り付けは、手で置かない</h2>
+      <p class="sub">physics — 落として積むという設計</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>皿の上の位置を1個ずつ手で書くと、必ず「並べた」ように見えます。</li>
+        <li>そこで<b>上から落として、重力と摩擦に任せます</b>。物理エンジンは Havok。</li>
+        <li>ただし13本のうち何本かは、あえて物理を使いません。<b>転がってはいけない料理</b>があるからです。</li>
+      </ul>
+    </div>
+
+    <p>
+      唐揚げを皿に山盛りにしたい。座標を手で書くと、どうやっても不自然になります。
+      隙間が均等すぎるか、めり込むか、どちらかです。実物の山は、
+      <b>落ちたものが下のものに引っかかって、たまたまそこで止まった</b>結果できています。
+    </p>
+    <p>
+      だから、そのとおりにします。皿を置いて、重力を設定して、上から1個ずつ落とす。
+      あとは物理エンジンが勝手に積んでくれます。書くのは「何を、どこから、どんな向きで落とすか」だけです。
+    </p>
+    <figure>
+<pre><span class="c">// 8. Scene / 物理（クッキー.js）</span>
+<span class="k">const</span> hk = <span class="k">await</span> HavokPhysics();
+scene.enablePhysics(<span class="k">new</span> V3(<span class="n">0</span>, <span class="n">-620</span>, <span class="n">0</span>), <span class="k">new</span> BABYLON.HavokPlugin(<span class="k">true</span>, hk));
+
+<span class="c">// 【対策】単位が cm なので重力は 981 相当。ただし Havok の接触許容量は
+//         絶対値で決まっているため、実重力だと震える。620 で安定域に入る</span>
+<span class="k">new</span> BABYLON.PhysicsAggregate(cookie, BABYLON.PhysicsShapeType.CONVEX_HULL,
+    { mass: <span class="n">6</span>, friction: <span class="n">0.55</span>, restitution: <span class="n">0.04</span> }, scene);</pre>
+      <figcaption>ウィンナー.js とクッキー.js に共通の設定。単位を cm にすると重力の値まで変わる</figcaption>
+    </figure>
+
+    <div class="lab" id="lab08">
+      <p class="lab-title">実験 — 落として積む（唐揚げの山）</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="dropCount">個数<span class="v" id="dropCountV">18</span></label>
+            <input type="range" id="dropCount" min="4" max="40" step="1" value="18">
+          </div>
+          <div class="ctrl">
+            <label for="dropFric">摩擦<span class="v" id="dropFricV">0.55</span></label>
+            <input type="range" id="dropFric" min="0" max="1" step="0.01" value="0.55">
+          </div>
+          <div class="ctrl">
+            <label for="dropRest">跳ね返り<span class="v" id="dropRestV">0.04</span></label>
+            <input type="range" id="dropRest" min="0" max="0.8" step="0.01" value="0.04">
+          </div>
+          <button class="chip" type="button" id="dropRun">もう一度 落とす</button>
+          <div class="readout" id="dropOut">—</div>
+        </div>
+        <canvas id="dropCanvas" width="640" height="360" aria-label="唐揚げを皿に落として積む実験"></canvas>
+      </div>
+      <p class="hint">
+        断面（横から見た2D）での実験です。摩擦を 0 にすると全部が皿の縁まで流れて平らになり、
+        1 に近づけると落ちた場所でそのまま止まって、不自然に高い塔ができます。
+      </p>
+    </div>
+
+    <h3>当たり判定は、見た目のとおりでなくてよい</h3>
+    <p>
+      物理エンジンは、見た目の形をそのまま使うと重すぎます。
+      そこで、当たり判定だけ簡単な形に置き換えます。クッキーやチョコは<b>凸包</b>
+      （でっぱりだけを包んだ袋のような形）で十分です。
+    </p>
+    <p>
+      ところがウィンナーは凸包では駄目でした。弓なりに曲がった胴を凸包で包むと、
+      内側の窪みが埋まってバナナの内側が板になります。
+      その状態で隣と重ねると、見た目では触れていないのに不自然に浮く。
+      ウィンナー.js は<b>カプセルを何個か並べたもの</b>を当たり判定にしています。
+    </p>
+
+    <h3>あえて物理を使わない</h3>
+    <p>
+      たこ焼きは、ほぼ球です。物理で落とすと転がります。転がると、
+      <b>せっかく上面に掛けたソースが横や下を向きます</b>。これは料理として成立しません。
+      だから、たこ焼き.js は物理を使いません。代わりに、
+    </p>
+    <ul>
+      <li>重なっている2個を、離れる方向に少しずつ押す（何度もくり返す）</li>
+      <li>舟皿の底の高さの場に着地させる</li>
+      <li>傾きは 15°までに制限する</li>
+    </ul>
+    <p>
+      という<b>決定論的な緩和</b>で配置しています。他の料理と違って、
+      この食べ物は「上下」が意味を持つからです。
+      同じ考え方は、月見団子（15個を規則正しく積む）や、
+      お寿司（3貫を板に並べる）でも使われています。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>物理の結果は毎回変わります。</b>
+      02章で「同じ種なら同じ結果」を守ってきたのに、
+      物理を挟んだ瞬間に再現性が消えます（計算の順番が実行ごとに揺れるため）。
+      だから物理を使うサンプルは、落とす順番・初期位置・初速をすべて種から決めて、
+      揺れる余地を最小にしています。それでも完全には一致しません。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>摩擦を 0 にして落とし、山ではなく1層になることを確かめる。</li>
+        <li>跳ね返りを 0.8 にすると何が起きるか予想してから試す。</li>
+        <li>個数を 40 にして、いちばん上の1個がどこで止まるか3回見比べる。</li>
+        <li>たこ焼き.js で「緩和」または「重なり」を検索し、物理を使わない理由を読む。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch07.html"><span class="dir">← まえの章</span><span class="ttl">07 「照り」「ぬれ」「粉っぽさ」を数値で言う</span></a>
+    <a class="next" href="ch09.html"><span class="dir">つぎの章 →</span><span class="ttl">09 部品を作って、たくさん並べる</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

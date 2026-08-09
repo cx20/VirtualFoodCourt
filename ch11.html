@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>見せ方を決める（光と露出） — たべもののつくりかた</title>
+<meta name="description" content="見せ方を決める（光と露出）">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">たべもののつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html" aria-current="page">11 光</a>
+      <a href="ch12.html">12 焼き色</a>
+      <a href="ch13.html">13 たれ</a>
+      <a href="ch14.html">14 透け</a>
+      <a href="ch15.html">15 粒</a>
+      <a href="ch16.html">16 潰れ</a>
+      <a href="ch17.html">17 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-sanma)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第11章</p>
+<section class="chapter" id="ch11" style="--ch:var(--p-sanma)">
+  <div class="chapter-head">
+    <div class="chnum">11<small>Scene</small></div>
+    <div>
+      <h2>見せ方を決める（光と露出）</h2>
+      <p class="sub">IBL / exposure / tone mapping — 環境光と露出</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>同じ料理でも、光の当て方で<b>別物になります</b>。形と同じくらい重要です。</li>
+        <li>点の光源だけでは足りません。<b>まわりの環境そのものを光として</b>当てます（IBL）。</li>
+        <li>明るすぎる部分をどう畳むか（<b>トーンマッピング</b>）で、料理か写真の失敗かが分かれます。</li>
+      </ul>
+    </div>
+
+    <p>
+      ここまでで形も模様も質感もできました。それでも、光の設定を間違えると、
+      作ったものは食品サンプルに見えます。逆に、光がよければ多少の粗は隠れます。
+      13本のサンプルは、シーンの設定にほぼ同じ手を使っています。
+    </p>
+    <ul>
+      <li><b>環境光（IBL）</b> — 空や壁からの光を1枚の環境マップとして与える。
+      食べ物は反射がやわらかいので、点光源だけだと影が黒く潰れます。</li>
+      <li><b>キーライト</b> — 主役の1灯。斜め上、やや後ろから当てると、
+      料理の輪郭が光って立体的になります（逆光ぎみ）。</li>
+      <li><b>影</b> — ESM ではなく PCF ＋ <code>forceBackFacesOnly</code>。
+      団子のように丸いものは、ESM だと自己遮蔽が痣のような黒い斑になります。</li>
+      <li><b>SSAO2</b> — 物と物の接するところに薄い陰りを入れる。接地感が出ます。</li>
+      <li><b>露出とトーンマッピング</b> — ACES というフィルム風の曲線で、
+      明るい部分をなめらかに畳みます。</li>
+    </ul>
+
+    <div class="lab" id="lab11">
+      <p class="lab-title">実験 — 露出とトーンマッピング</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="sceneExpo">露出<span class="v" id="sceneExpoV">1.00</span></label>
+            <input type="range" id="sceneExpo" min="0.3" max="2.6" step="0.02" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="sceneAmb">環境光の強さ<span class="v" id="sceneAmbV">1.00</span></label>
+            <input type="range" id="sceneAmb" min="0" max="2.2" step="0.02" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="sceneKey">キーライトの向き<span class="v" id="sceneKeyV">-40°</span></label>
+            <input type="range" id="sceneKey" min="-140" max="140" step="1" value="-40">
+          </div>
+          <label class="switch"><input type="checkbox" id="sceneTone" checked>トーンマッピングを使う</label>
+          <div class="readout" id="sceneOut">—</div>
+        </div>
+        <canvas id="sceneCanvas" width="640" height="360" aria-label="露出とトーンマッピングを変える実験"></canvas>
+      </div>
+      <p class="hint">
+        トーンマッピングを切って露出を上げると、明るいところが真っ白に貼り付きます。
+        入れておくと、白くなる手前で色が残り続けます。
+      </p>
+    </div>
+
+    <h3>トーンマッピングは「明るさの畳み方」</h3>
+    <p>
+      計算で出た明るさは 1 を超えます。画面は 1 までしか出せません。
+      1 を超えたぶんを単純に切り落とすと、<b>ハイライトが真っ白な板になります</b>。
+      料理でこれをやると、たれの照りが「白いシール」に見えます。
+    </p>
+    <p>
+      そこで、切り落とすかわりになめらかに畳みます。
+      <code>x / (1 + x)</code> のような曲線を通すと、どれだけ明るくても 1 を超えず、
+      しかも色が残ります。実際のサンプルは ACES という、
+      映画用に作られた曲線を使っています。
+    </p>
+
+    <h3>逆光は、食べ物の常套手段</h3>
+    <p>
+      料理写真が斜め後ろから光を当てるのには理由があります。
+      <b>光が食材を通り抜けるところが見えるから</b>です。
+      赤身の縁が赤く抜け、団子の輪郭が白く光り、大根おろしがふわっと浮く。
+      これは 07章の subSurface と 14章の透けと直結しています。
+      光の向きを変えるだけで、同じ材質が別物に見えます。上の実験で確かめてください。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>被写界深度（ぼけ）の単位は m です。</b>
+      このプロジェクトは 1 unit = 1 cm で書かれています。
+      ところが Babylon.js の被写界深度は「1 unit = 1 m」でぼけの大きさを計算するので、
+      ピント位置に <code>radius × 1000</code> を渡す必要があります。
+      団子シリーズ4本すべてのコメントに、この注意が書かれています。</p>
+      <p><b>環境光を上げれば明るくなる、ではありません。</b>
+      上げすぎると影が消え、平べったい絵になります。
+      「明るさが足りない」と感じたときに触るのは、たいてい露出のほうです。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>トーンマッピングを切り、露出を 2.6 にして、ハイライトがどうなるか見る。</li>
+        <li>キーライトを真正面（0°）にして、立体感がどれだけ失われるか確かめる。</li>
+        <li>環境光を 0 にして、影が黒く潰れることを確かめる。</li>
+        <li>花見団子.js で「被写界深度」を検索し、なぜ 1000 を掛けるのか読む。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch10.html"><span class="dir">← まえの章</span><span class="ttl">10 曲がったものを作る</span></a>
+    <a class="next" href="ch12.html"><span class="dir">つぎの章 →</span><span class="ttl">12 焼き色は、形と相関している</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>たべもののつくりかた</b> — Babylon.js による、料理の手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>
