@@ -144,6 +144,17 @@ flake.thinInstanceSetBuffer(<span class="s">"color"</span>, colors, <span class=
       <p><b>影を落とす対象に入れると、一気に重くなります。</b>
       500枚のかけら全部に影を計算させる必要はありません。
       大きいものだけ影を持たせ、小さいかけらは外します。</p>
+      <p><b>同じ名前で何個も作ると、あとで自分が困ります。</b>
+      ウィンナー4本を全部 <code>"wiener"</code> という名前で作っていたことがありました。
+      画面は正しく出るので気づきません。ところが Playground の
+      <b>Inspector で3本目をクリックすると、2本目が選ばれます</b>。
+      Babylon.js は <code>new BABYLON.Mesh(name)</code> のときに
+      <b><code>id</code> にも同じ値を入れる</b>ので、名前が同じなら id まで同じになり、
+      Inspector が id で引き当てるときに取り違えるためです。</p>
+      <p>厄介なのは、<b>名前だけ直しても直らない</b>ことです。
+      あとから <code>mesh.name</code> を変えても <code>id</code> は元のまま残ります。
+      13本のサンプルは「name を変えたら id も必ず併せて変える」を規約にしました。
+      同じ部品を何百個も並べる章なので、いちばん踏みやすい落とし穴です。</p>
     </div>
 
     <div class="try">
