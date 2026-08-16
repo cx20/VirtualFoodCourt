@@ -1,6 +1,33 @@
 // =====================================================================
 //  Photoreal Dango  /  写実的な団子（三色団子・みたらし団子・焼き団子）
+//  BUILD: dango-B
 //  Babylon.js Playground 用（そのまま貼り付けて実行できます）
+//
+//  dango-A からの変更点（Inspector のデバッグ表示）:
+//    (a) Scene Explorer の Picker が、クリックした場所と違う所を選ぶ
+//        シイタケ版で長く追いかけて特定した。原因は mesh.id の重複。
+//        Babylon の Node はコンストラクタで id = name を入れるので、
+//        同じ名前で作ったメッシュは id まで同じになる。Inspector は
+//        拾ったメッシュを id でツリーの項目へ引き当てているとみられ、
+//        同じ id が並んでいると別の個体に当たる。実測では
+//          pick が返した: shiitakeCap7   → Inspector が選んだ: shiitakeCap6
+//        となり、pick 自体は最初から正しいメッシュを返していた
+//        （当たり位置に印を出して確認済み）。
+//        このシーンは 3本の串 × 3個の団子＝9個が全部 "dango"、串も3本とも
+//        "stick" という状態だったので、取り違えて当然だった。
+//        串と団子に通し番号を振り、name と id の両方を一意にする
+//        （dango1_1 … 串1の1個目 / stick1 / skewer1）。
+//        name を変えたら id も必ず併せて変える、が守るべき規約になる
+//    (b) Physics Helper が何も出ない／ギズモがずれる
+//        GUI 専用カメラが原因。activeCameras を 2 台にすると、Babylon の
+//        各機能が「activeCameras の末尾＝描画の基準カメラ」と見なす所で
+//        全部 guiCam を拾う（UtilityLayerRenderer / EffectLayer /
+//        scene.activeCamera）。そもそもカメラを分ける必要が無かった。
+//        Layer.applyPostProcess = false にすると前景レイヤーは
+//        _afterCameraPostProcessStage で描かれる＝ポストプロセスの後に
+//        合成されるので、カメラ1台のまま GUI だけ Bloom / DOF から外せる。
+//        guiOwnCamera の既定を false にして、こちらを標準にした
+//        （true にすれば従来のカメラ分離＋bindDebugCamera に戻る）
 //
 //  実物の要点（ここを外すと「色つきの球に棒」になる）:
 //    ・団子は球ではない。串の方向に押しつぶされ、隣と接する両端が平らな面になる
@@ -130,7 +157,17 @@ var createScene = function () {
         skinVariants: 6,
         // --- 描画
         useSSAO: true,
-        showPlate: true
+        showPlate: true,
+
+        // --- GUI / Inspector 対策
+        // 【対策】GUI をポストプロセスから外すのに、以前はカメラを2台にして
+        //         layerMask で分けていた。しかし activeCameras が2台あると
+        //         scene.activeCamera が guiCam を指す瞬間ができ、Inspector の
+        //         Physics Helper / ギズモ / 選択ハイライトが狂う。
+        //         Layer.applyPostProcess = false なら、カメラ1台のまま
+        //         GUI だけ Bloom / DOF の後に合成できる。既定はこちら。
+        //         true にすると従来のカメラ分離（＋bindDebugCamera）に戻る
+        guiOwnCamera: false
     };
 
     const START_PRESET = "sanshoku";
@@ -830,6 +867,23 @@ var createScene = function () {
             this.topY = cursor - cfg.gap;
 
             this._buildStick(rng, stickMat);
+
+            // 【対策】9個の団子が全部 "dango"、3本の串が全部 "stick" のままだと、
+            //   Inspector が拾ったメッシュを別の個体へ引き当てる。
+            //   Babylon の Node はコンストラクタで id = name を入れるので、
+            //   name を変えただけでは id が元のまま残る。両方を一意にする
+            Skewer._serial = (Skewer._serial || 0) + 1;
+            const no = Skewer._serial;
+            this.no = no;
+            this.root.name = "skewer" + no;
+            this.root.id = this.root.name;
+            for (let i = 0; i < this.dangos.length; i++) {
+                const m = this.dangos[i].mesh;
+                m.name = "dango" + no + "_" + (i + 1);
+                m.id = m.name;
+            }
+            this.stick.name = "stick" + no;
+            this.stick.id = this.stick.name;
         }
 
         _buildStick(rng, stickMat) {
@@ -1025,6 +1079,9 @@ var createScene = function () {
 
     function build(presetKey, seed, sticks) {
         if (state) { for (const s of state.skewers) s.dispose(); state.group.dispose(); state = null; }
+        // 【対策】通し番号を戻さないと、GUI で作り直すたびに skewer4, skewer5 …
+        //   と伸びていく。古い分は上で dispose 済みなので衝突しない
+        Skewer._serial = 0;
         const cfg = Object.assign({}, GLOBAL, PRESETS[presetKey]);
         cfg.preset = presetKey; cfg.seed = seed >>> 0;
 
@@ -1124,12 +1181,84 @@ var createScene = function () {
     // =================================================================
     // 【対策】フルスクリーン GUI は既定でシーンと同じカメラで合成されるため、
     //         Bloom / 被写界深度 / シャープンが UI にも乗ってボケる
+    // 【対策】カメラを2台にすると、Babylon の各機能が「activeCameras の末尾＝
+    //   描画の基準カメラ」と見なす所で全部 guiCam を拾い、Inspector の
+    //   デバッグ機能が壊れる（ヘッダの (b) を参照）。
+    //   既定ではカメラを分けず、GUI だけポストプロセスの後に合成する
     const GUI_MASK = 0x20000000;
-    const guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
-    guiCam.layerMask = GUI_MASK;
-    scene.activeCameras = [camera, guiCam];
+
+    // guiOwnCamera = true（従来方式）にしたときだけ使う。基準カメラを明示して
+    // 壊れた 3 系統を直す
+    function bindDebugCamera(scene, mainCam) {
+        // (1) UtilityLayerRenderer（Physics Helper / ギズモ / 選択枠の土台）
+        // 【対策】Inspector が内部の WeakMap に抱えていて外から触れないレイヤーも
+        //   あるので、インスタンスを追わずプロトタイプごと差し替える
+        const ULR = BABYLON.UtilityLayerRenderer;
+        if (ULR) {
+            if (!ULR.prototype.__foodCamPatch) {
+                ULR.__foodCamTable = new WeakMap();
+                const orig = ULR.prototype.getRenderCamera;
+                ULR.prototype.getRenderCamera = function (getRigParentIfPossible) {
+                    if (!this._renderCamera) {
+                        const cam = ULR.__foodCamTable.get(this.originalScene);
+                        if (cam) {
+                            return (getRigParentIfPossible && cam.isRigCamera)
+                                ? cam.rigParent : cam;
+                        }
+                    }
+                    return orig.call(this, getRigParentIfPossible);
+                };
+                ULR.prototype.__foodCamPatch = true;
+            }
+            ULR.__foodCamTable.set(scene, mainCam);
+        }
+
+        // (2) EffectLayer（GlowLayer / HighlightLayer / 選択のアウトライン）
+        // 【対策】layerMask では止まらない。Inspector は選択のたびに後から
+        //   足してくるので、未束縛のものだけを毎フレーム拾う
+        scene.onBeforeRenderObservable.add(() => {
+            const ls = scene.effectLayers;
+            if (!ls) return;
+            for (let i = 0; i < ls.length; i++) {
+                const l = ls[i];
+                if (l.__foodCamBound) continue;
+                l.__foodCamBound = true;
+                if (l._effectLayerOptions) l._effectLayerOptions.camera = mainCam;
+                if (l._mainTexture) l._mainTexture.activeCamera = mainCam;
+            }
+        });
+
+        // (3) scene.activeCamera を描画後とポインタ処理の直前に戻す
+        const back = () => {
+            if (scene.activeCamera !== mainCam) scene.activeCamera = mainCam;
+        };
+        scene.onAfterRenderObservable.add(back);
+        scene.onPrePointerObservable.add(back);
+    }
+
+    let guiCam = null;
+    if (GLOBAL.guiOwnCamera) {
+        guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
+        guiCam.layerMask = GUI_MASK;
+        scene.activeCameras = [camera, guiCam];
+        bindDebugCamera(scene, camera);
+    } else {
+        // カメラは1台のまま。activeCamera が主カメラ以外を指す瞬間が無いので、
+        // Inspector のデバッグ機能は何も細工せずに正しく動く
+        scene.activeCameras = [camera];
+    }
     const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scene);
-    if (ui.layer) ui.layer.layerMask = GUI_MASK;
+    if (ui.layer) {
+        if (GLOBAL.guiOwnCamera) {
+            ui.layer.layerMask = GUI_MASK;
+        } else {
+            // 【対策】前景レイヤーの applyPostProcess を false にすると、
+            //   Babylon はそのレイヤーを _afterCameraPostProcessStage で描く。
+            //   つまり Bloom などを掛け終わった後に GUI を重ねるので、
+            //   カメラを分けなくても UI はボケない
+            ui.layer.applyPostProcess = false;
+        }
+    }
 
     const COL = {
         idle: "#2a2426", active: "#8c5a34", edge: "#4a4042",

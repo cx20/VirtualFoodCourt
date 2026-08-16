@@ -1,6 +1,41 @@
 // =====================================================================
 //  Photoreal Wiener  /  写実的なウィンナー（あらびき・赤ウィンナー・ハーブ）
+//  BUILD: wiener-I
 //  Babylon.js Playground 用（そのまま貼り付けて実行できます）
+//
+//  wiener-I での修正（Inspector のデバッグ表示）:
+//    (a) Scene Explorer の Picker が、クリックした場所と違う所を選ぶ
+//        このシーンで最初に見つかり、シイタケ版で真因まで辿り着いた。
+//        原因は mesh.id の重複。Babylon の Node はコンストラクタで
+//        id = name を入れるので、同じ名前で作ったメッシュは id まで同じ。
+//        Inspector は拾ったメッシュを id でツリーの項目へ引き当てて
+//        いるとみられ、同じ id が並んでいると別の個体に当たる。実測では
+//          pick が返した: shiitakeCap7   → Inspector が選んだ: shiitakeCap6
+//        となり、pick 自体は最初から正しいメッシュを返していた
+//        （当たり位置に印を出して確認済み）。
+//        4本とも "wiener" だったので、貫番号ならぬ本数番号を振って
+//        name と id の両方を一意にする。
+//        【経緯】以前この件を追ったとき、名前だけを変えて直らなかった
+//        ことがある。id を据え置いたのが原因で、対策が足りていなかった。
+//        name を変えたら id も必ず併せて変える、が守るべき規約になる
+//    (b) 1本目を選ぶと Inspector が例外を出す
+//        TypeError: n.toEulerAngles is not a function。値そのものは正しい
+//        Quaternion で、コンソールから toEulerAngles() を呼べば Euler が
+//        返るので Inspector 側の不具合。鉄板は CreateLathe で quaternion を
+//        持たず Euler の rotation 行になるため、これまで露見しなかった。
+//        Havok は STATIC のボディをメッシュへ書き戻さないことを実測で
+//        確認したので、固定した時点で姿勢を Euler へ焼き直して quaternion を
+//        外す（bakeRotationOnFreeze）。落下中に選ぶと例外は出る
+//    (c) Physics Helper が何も出ない／ギズモがずれる
+//        GUI 専用カメラが原因。activeCameras を 2 台にすると、Babylon の
+//        各機能が「activeCameras の末尾＝描画の基準カメラ」と見なす所で
+//        全部 guiCam を拾う（UtilityLayerRenderer / EffectLayer /
+//        scene.activeCamera）。そもそもカメラを分ける必要が無かった。
+//        Layer.applyPostProcess = false にすると前景レイヤーは
+//        _afterCameraPostProcessStage で描かれる＝ポストプロセスの後に
+//        合成されるので、カメラ1台のまま GUI だけ Bloom / DOF から外せる。
+//        guiOwnCamera の既定を false にして、こちらを標準にした
+//        （true にすれば従来のカメラ分離＋bindDebugCamera に戻る）
 //
 //  実物の要点（ここを外すと「オレンジ色の棒」になる）:
 //    ・まっすぐではない。ゆるく弓なりに曲がり、太さも一定ではない
@@ -132,7 +167,21 @@ var createScene = async function () {
 
         // --- 描画
         useSSAO: true,
-        showPan: true
+        showPan: true,
+
+        // --- GUI / Inspector 対策
+        // 【対策】GUI をポストプロセスから外すのに、以前はカメラを2台にして
+        //         layerMask で分けていた。しかし activeCameras が2台あると
+        //         scene.activeCamera が guiCam を指す瞬間ができ、Inspector の
+        //         Physics Helper / ギズモ / 選択ハイライトが狂う。
+        //         Layer.applyPostProcess = false なら、カメラ1台のまま
+        //         GUI だけ Bloom / DOF の後に合成できる。既定はこちら
+        guiOwnCamera: false,
+
+        // 【対策】Inspector v2 は rotationQuaternion を持つメッシュの
+        //         プロパティ欄で例外を出す。静止して STATIC に固定した
+        //         あとは姿勢が動かないので、Euler へ焼き直して外す
+        bakeRotationOnFreeze: true
     };
 
     const START_PRESET = "arabiki";
@@ -915,9 +964,26 @@ var createScene = async function () {
         for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
         return h >>> 0;
     }
+    // 静止して固定した個体の姿勢を Euler へ焼き直す。
+    // 【対策】Inspector v2 が rotationQuaternion を持つメッシュで例外を出す
+    //   （ヘッダの (b) を参照）。Havok は STATIC のボディを書き戻さないので、
+    //   固定後なら外しても姿勢は保たれる。rotationQuaternion に null を
+    //   入れても _rotation は消えないので、先に rotation を入れてから外す
+    function bakeRotation(mesh) {
+        if (!GLOBAL.bakeRotationOnFreeze || !mesh.rotationQuaternion) return;
+        mesh.rotation = mesh.rotationQuaternion.toEulerAngles();
+        mesh.rotationQuaternion = null;
+        mesh.computeWorldMatrix(true);
+    }
+
     function getSkin(presetKey, cfg, variant) {
         const k = presetKey + "|" + variant;
-        if (!skinCache[k]) skinCache[k] = new WienerSkin(scene, cfg, hashStr(k));
+        if (!skinCache[k]) {
+            skinCache[k] = new WienerSkin(scene, cfg, hashStr(k));
+            // 変種3枚が同じ "wienerMat" だと、マテリアル一覧でも区別できない
+            skinCache[k].mat.name = "wienerMat_" + presetKey + "_" + variant;
+            skinCache[k].mat.id = skinCache[k].mat.name;
+        }
         return skinCache[k];
     }
     function meshBounds(m) {
@@ -1197,6 +1263,12 @@ var createScene = async function () {
         for (let i = 0; i < count; i++) {
             const skin = getSkin(presetKey, cfg, i % cfg.skinVariants);
             const w = new Wiener(scene, cfg, (cfg.seed + i * 104729) >>> 0, skin);
+            // 【対策】4本とも "wiener" だと、Inspector が拾ったメッシュを
+            //   別の本へ引き当てる。Babylon の Node はコンストラクタで
+            //   id = name を入れるので、name を変えただけでは id が元のまま
+            //   残る。両方を一意にする（ここを片方だけにして直らなかった）
+            w.mesh.name = "wiener" + (i + 1);
+            w.mesh.id = w.mesh.name;
             wieners.push(w);
             // 【対策】物理で動かすメッシュは rotationQuaternion を使う。
             //         Euler の rotation のままだと Havok 側の姿勢と食い違う
@@ -1379,6 +1451,7 @@ var createScene = async function () {
             if (it.quiet > GLOBAL.settleHold || postDropTimer > GLOBAL.settleTimeout) {
                 it.body.setMotionType(BABYLON.PhysicsMotionType.STATIC);
                 it.fixed = true; remaining--;
+                bakeRotation(it.mesh);
                 DBG.log("固定 #" + queue.indexOf(it),
                     "静止 " + DBG.n(it.quiet) + "s / v=" + DBG.n(v) + " w=" + DBG.n(w)
                     + (postDropTimer > GLOBAL.settleTimeout ? "（打ち切り）" : ""));
@@ -1440,12 +1513,83 @@ var createScene = async function () {
     // =================================================================
     // 【対策】フルスクリーン GUI は既定でシーンと同じカメラで合成されるため、
     //         Bloom / 被写界深度 / シャープンが UI にも乗ってボケる
+    // 【対策】カメラを2台にすると、Babylon の各機能が「activeCameras の末尾＝
+    //   描画の基準カメラ」と見なす所で全部 guiCam を拾い、Inspector の
+    //   デバッグ機能が壊れる（ヘッダの (c) を参照）。
+    //   既定ではカメラを分けず、GUI だけポストプロセスの後に合成する
     const GUI_MASK = 0x20000000;
-    const guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
-    guiCam.layerMask = GUI_MASK;
-    scene.activeCameras = [camera, guiCam];
+
+    // guiOwnCamera = true（従来方式）にしたときだけ使う
+    function bindDebugCamera(scene, mainCam) {
+        // (1) UtilityLayerRenderer（Physics Helper / ギズモ / 選択枠の土台）
+        // 【対策】Inspector が内部の WeakMap に抱えていて外から触れないレイヤーも
+        //   あるので、インスタンスを追わずプロトタイプごと差し替える
+        const ULR = BABYLON.UtilityLayerRenderer;
+        if (ULR) {
+            if (!ULR.prototype.__foodCamPatch) {
+                ULR.__foodCamTable = new WeakMap();
+                const orig = ULR.prototype.getRenderCamera;
+                ULR.prototype.getRenderCamera = function (getRigParentIfPossible) {
+                    if (!this._renderCamera) {
+                        const cam = ULR.__foodCamTable.get(this.originalScene);
+                        if (cam) {
+                            return (getRigParentIfPossible && cam.isRigCamera)
+                                ? cam.rigParent : cam;
+                        }
+                    }
+                    return orig.call(this, getRigParentIfPossible);
+                };
+                ULR.prototype.__foodCamPatch = true;
+            }
+            ULR.__foodCamTable.set(scene, mainCam);
+        }
+
+        // (2) EffectLayer（GlowLayer / HighlightLayer / 選択のアウトライン）
+        // 【対策】layerMask では止まらない。Inspector は選択のたびに後から
+        //   足してくるので、未束縛のものだけを毎フレーム拾う
+        scene.onBeforeRenderObservable.add(() => {
+            const ls = scene.effectLayers;
+            if (!ls) return;
+            for (let i = 0; i < ls.length; i++) {
+                const l = ls[i];
+                if (l.__foodCamBound) continue;
+                l.__foodCamBound = true;
+                if (l._effectLayerOptions) l._effectLayerOptions.camera = mainCam;
+                if (l._mainTexture) l._mainTexture.activeCamera = mainCam;
+            }
+        });
+
+        // (3) scene.activeCamera を描画後とポインタ処理の直前に戻す
+        const back = () => {
+            if (scene.activeCamera !== mainCam) scene.activeCamera = mainCam;
+        };
+        scene.onAfterRenderObservable.add(back);
+        scene.onPrePointerObservable.add(back);
+    }
+
+    let guiCam = null;
+    if (GLOBAL.guiOwnCamera) {
+        guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
+        guiCam.layerMask = GUI_MASK;
+        scene.activeCameras = [camera, guiCam];
+        bindDebugCamera(scene, camera);
+    } else {
+        // カメラは1台のまま。activeCamera が主カメラ以外を指す瞬間が無いので、
+        // Inspector のデバッグ機能は何も細工せずに正しく動く
+        scene.activeCameras = [camera];
+    }
     const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scene);
-    if (ui.layer) ui.layer.layerMask = GUI_MASK;
+    if (ui.layer) {
+        if (GLOBAL.guiOwnCamera) {
+            ui.layer.layerMask = GUI_MASK;
+        } else {
+            // 【対策】前景レイヤーの applyPostProcess を false にすると、
+            //   Babylon はそのレイヤーを _afterCameraPostProcessStage で描く。
+            //   つまり Bloom などを掛け終わった後に GUI を重ねるので、
+            //   カメラを分けなくても UI はボケない
+            ui.layer.applyPostProcess = false;
+        }
+    }
 
     const COL = {
         idle: "#2b2321", active: "#a8562a", edge: "#4c3e38",
