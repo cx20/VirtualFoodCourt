@@ -1,6 +1,18 @@
 // =====================================================================
-//  Photoreal Takoyaki  /  写実的なたこ焼き      BUILD: tako-A
+//  Photoreal Takoyaki  /  写実的なたこ焼き      BUILD: tako-G
 //  Babylon.js Playground 用（そのまま貼り付けて実行できます）
+//
+//  tako-F からの修正（Inspector のデバッグ表示）:
+//    ・GUI 専用カメラ（layerMask 分離）の副作用で、Playground の Inspector の
+//      デバッグ機能が壊れていた問題を修復。activeCameras を 2 台にすると、
+//      Babylon の各機能が「activeCameras の末尾＝描画の基準カメラ」と
+//      見なす所で全部 guiCam を拾ってしまう:
+//        ・UtilityLayerRenderer → Physics Helper が何も出ない／ギズモがずれる
+//        ・EffectLayer          → 選択ハイライトが全カメラパスで合成される
+//        ・scene.activeCamera   → scene.pick() のレイが guiCam 基準になり、
+//                                 Scene Explorer の Picker が当たらない
+//      基準カメラを明示して 3 系統とも直した（「GUI」の bindDebugCamera）。
+//      合わせて、版の表記がヘッダと BUILD 定数で食い違っていたのを一本化
 //
 //  構成:
 //    0. CONFIG      … プリセット（定番 / 全部のせ / 焦がし / 塩）と舟皿
@@ -212,6 +224,9 @@ var createScene = async function () {
         // 【対策】静物なので、落ち着いたら剛体を捨てて完全に静止させる。
         //         剛体を残したままだと、接触が多い配置では
         //         プルプルとした微振動が原理的に止まらない
+        // 【注】このため Inspector の Physics Helper には、既定では
+        //       舟皿と板の間（静的）の形状しか出ない。玉の球形状も見たいときは
+        //       false にすると剛体が残る（代わりに微振動する）
         freezeAfterSettle: true,
 
         // テクスチャ
@@ -227,6 +242,13 @@ var createScene = async function () {
         dofRatio: 0.070,
         dofFStop: 2.6,
 
+        // 【対策】GUI を専用カメラで合成すると UI に Bloom / DOF が乗らない
+        //         代わりに Inspector のデバッグ機能が壊れる。壊れた3系統は
+        //         bindDebugCamera() で直してあるが、素の挙動と比べたいときの
+        //         ために摘みを残す（false にすると UI がボケる代わりに
+        //         Inspector は素の状態で動く）
+        guiOwnCamera: true,
+
         compactWidth: 700,
         compactMinSide: 480,
         guiMaxScale: 2.2
@@ -234,7 +256,9 @@ var createScene = async function () {
 
     const START_PRESET = "teiban";
     const START_SEED = 20260805;
-    const BUILD = "tako-F";
+    // 【対策】ヘッダのコメントと定数で別々の版名を書いていたので、
+    //         「どちらが本当の版か」が分からなくなっていた。文字列を一本化する
+    const BUILD = "tako-G";
 
     const V3 = BABYLON.Vector3;
     const C3 = BABYLON.Color3;
@@ -2141,6 +2165,8 @@ var createScene = async function () {
         //         接触が多い配置（12個の二段など）では微小な貫入と押し返しが
         //         釣り合わず、いつまでもプルプル震え続ける。
         //         必要なのは「自然な配置」であって、続く運動ではない
+        // 【注】このため Inspector の Physics Helper に玉の球形状は出ない。
+        //       見たいときは GLOBAL.freezeAfterSettle を false にする
         if (GLOBAL.freezeAfterSettle) for (const e of items) e.detachPhysics();
     }
 
@@ -2193,7 +2219,7 @@ var createScene = async function () {
             for (const e of items) e.attachPhysics();
             settlePhysics();
         }
-        
+
         applyDebug();
         applyRelief();
         applyParts();
@@ -2252,12 +2278,78 @@ var createScene = async function () {
     // 【対策】フルスクリーンGUIは既定でシーンと同じカメラで合成されるため、
     //         Bloom / 被写界深度 / シャープンが UI にも乗ってボケる。
     //         GUI専用カメラを layerMask で分離する
+    // 【対策】ただし activeCameras を 2 台にすると、Babylon の各機能が
+    //   「activeCameras の末尾＝描画の基準カメラ」と見なす所で全部 guiCam を
+    //   拾ってしまい、Inspector のデバッグ機能が 3 系統まとめて壊れる。
+    //     ・UtilityLayerRenderer → Physics Helper が何も出ない／ギズモがずれる
+    //     ・EffectLayer          → 選択ハイライトが全カメラパスで合成される
+    //     ・scene.activeCamera   → scene.pick() のレイが guiCam 基準になり、
+    //                              Scene Explorer の Picker が当たらない
+    //   分離をやめれば直るが UI がボケるので、基準カメラを明示して直す
     const GUI_MASK = 0x20000000;
-    const guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
-    guiCam.layerMask = GUI_MASK;
-    scene.activeCameras = [camera, guiCam];
+
+    function bindDebugCamera(scene, mainCam) {
+        // (1) UtilityLayerRenderer（Physics Helper / ギズモ / 選択枠の土台）
+        // 【対策】Inspector が内部の WeakMap に抱えていて外から触れないレイヤーも
+        //   あるので、インスタンスを追わずプロトタイプごと差し替える。
+        //   個別に直すと必ず取りこぼす
+        const ULR = BABYLON.UtilityLayerRenderer;
+        if (ULR) {
+            if (!ULR.prototype.__foodCamPatch) {
+                ULR.__foodCamTable = new WeakMap();
+                const orig = ULR.prototype.getRenderCamera;
+                ULR.prototype.getRenderCamera = function (getRigParentIfPossible) {
+                    if (!this._renderCamera) {
+                        const cam = ULR.__foodCamTable.get(this.originalScene);
+                        if (cam) {
+                            return (getRigParentIfPossible && cam.isRigCamera)
+                                ? cam.rigParent : cam;
+                        }
+                    }
+                    return orig.call(this, getRigParentIfPossible);
+                };
+                ULR.prototype.__foodCamPatch = true;
+            }
+            ULR.__foodCamTable.set(scene, mainCam);
+        }
+
+        // (2) EffectLayer（GlowLayer / HighlightLayer / 選択のアウトライン）
+        // 【対策】layerMask では止まらない。camera を束縛するしかないが、
+        //   Inspector は選択のたびに後から足してくるので、未束縛のものだけを
+        //   毎フレーム拾う（通常 0〜1 枚なので費用はほぼ 0）
+        scene.onBeforeRenderObservable.add(() => {
+            const ls = scene.effectLayers;
+            if (!ls) return;
+            for (let i = 0; i < ls.length; i++) {
+                const l = ls[i];
+                if (l.__foodCamBound) continue;
+                l.__foodCamBound = true;
+                if (l._effectLayerOptions) l._effectLayerOptions.camera = mainCam;
+                if (l._mainTexture) l._mainTexture.activeCamera = mainCam;
+            }
+        });
+
+        // (3) scene.activeCamera
+        // 【対策】描き終えた時点では guiCam が入ったままになる。Picker が呼ぶ
+        //   scene.pick() は camera 引数なしなので、ここを毎フレーム戻す。
+        //   cameraToUseForPointers は InputManager が通る経路にしか効かない
+        scene.onAfterRenderObservable.add(() => {
+            if (scene.activeCamera !== mainCam) scene.activeCamera = mainCam;
+        });
+    }
+
+    let guiCam = null;
+    if (GLOBAL.guiOwnCamera) {
+        guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
+        guiCam.layerMask = GUI_MASK;
+        scene.activeCameras = [camera, guiCam];
+        bindDebugCamera(scene, camera);
+    } else {
+        // 分離しない：Inspector は素のまま正しく動くが、UI に Bloom / DOF が乗る
+        scene.activeCameras = [camera];
+    }
     const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scene);
-    if (ui.layer) ui.layer.layerMask = GUI_MASK;
+    if (ui.layer && GLOBAL.guiOwnCamera) ui.layer.layerMask = GUI_MASK;
 
     const COL = {
         idle: "#2a1c12", active: "#8a4a1c", edge: "#4a3428",

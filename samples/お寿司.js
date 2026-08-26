@@ -1,6 +1,35 @@
 // =====================================================================
-//  Photoreal Nigiri Sushi  /  写実的な握り寿司（まぐろ三貫）
+//  Photoreal Nigiri Sushi  /  写実的な握り寿司（まぐろ三貫）  BUILD: sushi-B
 //  Babylon.js Playground 用（そのまま貼り付けて実行できます）
+//
+//  sushi-A からの変更点（Inspector のデバッグ表示）:
+//    (a) Scene Explorer の Picker が、クリックした場所と違う所を選ぶ
+//        シイタケ版で長く追いかけて特定した。原因は mesh.id の重複。
+//        Babylon の Node はコンストラクタで id = name を入れるので、
+//        同じ名前で作ったメッシュは id まで同じになる。Inspector は
+//        拾ったメッシュを id でツリーの項目へ引き当てているとみられ、
+//        同じ id が並んでいると別の個体に当たる。実測では
+//          pick が返した: shiitakeCap7   → Inspector が選んだ: shiitakeCap6
+//        となり、pick 自体は最初から正しいメッシュを返していた
+//        （当たり位置に印を出して確認済み）。
+//        このシーンは貫の親（piece0..2）と米粒の変種（g0_0 …）は
+//        もともと一意だったが、
+//          ・シャリの下地  … 3貫とも "shariBody"
+//          ・ネタ          … 3貫とも "neta"
+//          ・米粒インスタンス … 貫ごとに k を数え直すので "gi0" が3つ
+//        が重複していた。いちばん選びたいネタとシャリが取り違えの対象
+//        だったので、貫番号を付けて name と id の両方を一意にする。
+//        name を変えたら id も必ず併せて変える、が守るべき規約になる
+//    (b) Physics Helper が何も出ない／ギズモがずれる
+//        GUI 専用カメラが原因。activeCameras を 2 台にすると、Babylon の
+//        各機能が「activeCameras の末尾＝描画の基準カメラ」と見なす所で
+//        全部 guiCam を拾う（UtilityLayerRenderer / EffectLayer /
+//        scene.activeCamera）。そもそもカメラを分ける必要が無かった。
+//        Layer.applyPostProcess = false にすると前景レイヤーは
+//        _afterCameraPostProcessStage で描かれる＝ポストプロセスの後に
+//        合成されるので、カメラ1台のまま GUI だけ Bloom / DOF から外せる。
+//        guiOwnCamera の既定を false にして、こちらを標準にした
+//        （true にすれば従来のカメラ分離＋bindDebugCamera に戻る）
 //
 //  ごはん.js の続き。シャリは「握って締めた酢飯」なので、
 //  米粒の造形・マテリアル・粒間の暗がりの焼き込みはそのまま流用できる。
@@ -169,7 +198,17 @@ var createScene = function () {
         useSSAO: true,
         useDOF: true,
         dofRatio: 0.060,
-        dofFStop: 2.4
+        dofFStop: 2.4,
+
+        // GUI / Inspector 対策
+        // 【対策】GUI をポストプロセスから外すのに、以前はカメラを2台にして
+        //         layerMask で分けていた。しかし activeCameras が2台あると
+        //         scene.activeCamera が guiCam を指す瞬間ができ、Inspector の
+        //         Physics Helper / ギズモ / 選択ハイライトが狂う。
+        //         Layer.applyPostProcess = false なら、カメラ1台のまま
+        //         GUI だけ Bloom / DOF の後に合成できる。既定はこちら。
+        //         true にすると従来のカメラ分離（＋bindDebugCamera）に戻る
+        guiOwnCamera: false
     };
 
     const START_NETA = "mix";     // "mix" / "akami" / "chutoro" / "otoro"
@@ -1447,6 +1486,12 @@ var createScene = function () {
 
             const body = buildShariBody(scene, SHARI, sd, assets.bodyMat);
             body.parent = root;
+            // 【対策】3貫とも "shariBody" のままだと、Inspector が拾った
+            //   メッシュを別の貫へ引き当てる。Babylon の Node はコンストラクタで
+            //   id = name を入れるので、name を変えただけでは id が元のまま残る。
+            //   両方を一意にする
+            body.name = "shariBody" + i;
+            body.id = body.name;
 
             const variants = [];
             for (let vi = 0; vi < GLOBAL.grainVariants; vi++) {
@@ -1464,7 +1509,13 @@ var createScene = function () {
                 const variant = variants[k % variants.length];
                 let node;
                 if (!used.has(variant)) { used.add(variant); node = variant; }
-                else { node = variant.createInstance("gi" + k); node.parent = root; }
+                else {
+                    // 【対策】k は貫ごとに数え直すので、貫番号を入れないと
+                    //   "gi0" が3貫ぶんできて id が重複する
+                    node = variant.createInstance("gi" + i + "_" + k);
+                    node.id = node.name;
+                    node.parent = root;
+                }
                 node.position.set(p.x, p.y, p.z);
                 const nrm = new V3(p.nx, p.ny, p.nz);
                 const axis = V3.Cross(up, nrm);
@@ -1491,6 +1542,10 @@ var createScene = function () {
 
             const neta = buildNeta(scene, np, SHARI, sd, getNetaMat(key));
             neta.parent = root;
+            // 【対策】ネタも3貫とも "neta" だった。いちばん選びたい部品なので、
+            //   貫番号に加えてネタの種類も名前に入れておく
+            neta.name = "neta" + i + "_" + key;
+            neta.id = neta.name;
 
             // 【対策】900粒 x 3貫をシャドウマップにも描くと頂点数が倍になる。
             //         粒どうしの落ち影は擬似AOとSSAOで足りている。
@@ -1575,12 +1630,84 @@ var createScene = function () {
     // =================================================================
     //  GUI
     // =================================================================
+    // 【対策】カメラを2台にすると、Babylon の各機能が「activeCameras の末尾＝
+    //   描画の基準カメラ」と見なす所で全部 guiCam を拾い、Inspector の
+    //   デバッグ機能が壊れる（ヘッダの (b) を参照）。
+    //   既定ではカメラを分けず、GUI だけポストプロセスの後に合成する
     const GUI_MASK = 0x20000000;
-    const guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
-    guiCam.layerMask = GUI_MASK;
-    scene.activeCameras = [camera, guiCam];
+
+    // guiOwnCamera = true（従来方式）にしたときだけ使う。基準カメラを明示して
+    // 壊れた 3 系統を直す
+    function bindDebugCamera(scene, mainCam) {
+        // (1) UtilityLayerRenderer（Physics Helper / ギズモ / 選択枠の土台）
+        // 【対策】Inspector が内部の WeakMap に抱えていて外から触れないレイヤーも
+        //   あるので、インスタンスを追わずプロトタイプごと差し替える
+        const ULR = BABYLON.UtilityLayerRenderer;
+        if (ULR) {
+            if (!ULR.prototype.__foodCamPatch) {
+                ULR.__foodCamTable = new WeakMap();
+                const orig = ULR.prototype.getRenderCamera;
+                ULR.prototype.getRenderCamera = function (getRigParentIfPossible) {
+                    if (!this._renderCamera) {
+                        const cam = ULR.__foodCamTable.get(this.originalScene);
+                        if (cam) {
+                            return (getRigParentIfPossible && cam.isRigCamera)
+                                ? cam.rigParent : cam;
+                        }
+                    }
+                    return orig.call(this, getRigParentIfPossible);
+                };
+                ULR.prototype.__foodCamPatch = true;
+            }
+            ULR.__foodCamTable.set(scene, mainCam);
+        }
+
+        // (2) EffectLayer（GlowLayer / HighlightLayer / 選択のアウトライン）
+        // 【対策】layerMask では止まらない。Inspector は選択のたびに後から
+        //   足してくるので、未束縛のものだけを毎フレーム拾う
+        scene.onBeforeRenderObservable.add(() => {
+            const ls = scene.effectLayers;
+            if (!ls) return;
+            for (let i = 0; i < ls.length; i++) {
+                const l = ls[i];
+                if (l.__foodCamBound) continue;
+                l.__foodCamBound = true;
+                if (l._effectLayerOptions) l._effectLayerOptions.camera = mainCam;
+                if (l._mainTexture) l._mainTexture.activeCamera = mainCam;
+            }
+        });
+
+        // (3) scene.activeCamera を描画後とポインタ処理の直前に戻す
+        const back = () => {
+            if (scene.activeCamera !== mainCam) scene.activeCamera = mainCam;
+        };
+        scene.onAfterRenderObservable.add(back);
+        scene.onPrePointerObservable.add(back);
+    }
+
+    let guiCam = null;
+    if (GLOBAL.guiOwnCamera) {
+        guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
+        guiCam.layerMask = GUI_MASK;
+        scene.activeCameras = [camera, guiCam];
+        bindDebugCamera(scene, camera);
+    } else {
+        // カメラは1台のまま。activeCamera が主カメラ以外を指す瞬間が無いので、
+        // Inspector のデバッグ機能は何も細工せずに正しく動く
+        scene.activeCameras = [camera];
+    }
     const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scene);
-    if (ui.layer) ui.layer.layerMask = GUI_MASK;
+    if (ui.layer) {
+        if (GLOBAL.guiOwnCamera) {
+            ui.layer.layerMask = GUI_MASK;
+        } else {
+            // 【対策】前景レイヤーの applyPostProcess を false にすると、
+            //   Babylon はそのレイヤーを _afterCameraPostProcessStage で描く。
+            //   つまり Bloom などを掛け終わった後に GUI を重ねるので、
+            //   カメラを分けなくても UI はボケない
+            ui.layer.applyPostProcess = false;
+        }
+    }
 
     const COL = {
         idle: "#2a1b1b", active: "#8f3a3a", edge: "#4a3636",

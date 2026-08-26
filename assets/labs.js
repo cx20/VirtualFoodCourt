@@ -566,8 +566,11 @@ function foldField(u, v, seed) {
         }
     }
 
+    // 【対策】倍率は、このあと renderMesh に渡す zoom と同じにすること。
+    //         0.42 で計算していたときは、点の群れだけが半分の大きさで出て、
+    //         面を張った瞬間に倍にふくらんで見えた
     function drawPoints(rot, k) {
-        var W = c.W, H = c.H, S = Math.min(W, H) * 0.42, cx = W / 2, cy = H / 2;
+        var W = c.W, H = c.H, S = Math.min(W, H) * 0.84, cx = W / 2, cy = H / 2;
         var cs = Math.cos(rot), sn = Math.sin(rot);
         var ce = Math.cos(0.28), se = Math.sin(0.28);
         var lim = Math.floor(mesh.count * clamp(k, 0, 1));
@@ -613,23 +616,68 @@ function foldField(u, v, seed) {
                 mat: { rough: 0.30, coat: 0.42, sss: 0.08, sheen: 0, sssCol: [1, .7, .35] },
                 albedo: albedoSauce
             });
-            // 青のりは板ポリゴンの実体。ここでは点で代用する（09章）
+            // 青のりは板ポリゴンの実体。テクスチャに緑の点を描いても、
+            // 1mm の粒はミップマップで溶けて「緑がかった靄」になる（09章）。
+            // ここでは、ソースの上にだけ小さなかけらを撒く。
+            //
+            // 【対策】倍率は renderMesh に渡した zoom と同じものを使うこと。
+            //         半分の値で計算していたときは、かけらが玉の中央に
+            //         小さくまとまり、ふりかけたようには見えなかった。
             var R = new Rng(5);
-            var S2 = Math.min(c.W, c.H) * 0.42, cs = Math.cos(rot), sn = Math.sin(rot);
+            var SZ = Math.min(c.W, c.H) * 0.84;
+            var cs = Math.cos(rot), sn = Math.sin(rot);
             var ce = Math.cos(0.28), se = Math.sin(0.28);
-            for (var i = 0; i < 260; i++) {
-                var u = R.next(), v = 0.42 + R.next() * 0.58;
-                if (R.next() > clamp(k * 1.2, 0, 1)) continue;
-                var a = u * TAU, t = v;
-                var f = foldField(u, v, 31);
-                var r = sampleProfile(PROFILES.tako, t) * (1 + 0.13 * (f - 0.5) * 2) * 1.01;
+            for (var i = 0; i < 560; i++) {
+                // 【対策】R はこのループで毎回同じ数だけ消費する。
+                //         途中で continue して消費数が変わると、k が増えるたびに
+                //         それ以降のかけらが総入れ替えになってちらつく
+                var u = R.next();
+                var t = 0.46 + R.next() * 0.54;
+                var thin = R.next();               // 極に溜まらせないための間引き
+                var birth = R.next();              // 現れる順番
+                var len = 0.026 + R.next() * 0.030;
+                var wid = 0.30 + R.next() * 0.26;
+                var ang = R.next() * Math.PI;
+                var tint = R.next();
+
+                if (birth > clamp(k * 1.15, 0, 1)) continue;
+                // ソースの上にしか乗らない。生地のままの下半分には落ちない
+                if (sauceT(u, t) < 0.06) continue;
+
+                var rr = sampleProfile(PROFILES.tako, t);
+                var a = u * TAU;
+                var f = foldField(u, t, 31);
+                var r = rr * (1 + 0.13 * (f - 0.5) * 2) * 1.012;
                 var x = r * Math.cos(a), y = (t - 0.5) * PROFILE_H.tako, z = r * Math.sin(a);
+                // 面の向き。玉はほぼ球なので、中心からの方向で足りる
+                var nl = Math.hypot(x, y, z) || 1;
+                var nqz = -(x / nl) * sn + (z / nl) * cs;
+                var facing = -(-(y / nl) * se + nqz * ce);     // 1 で正面、0 で輪郭
+                // 【対策】ここを 0.14 にしていたときは、輪郭の上に載ったかけらが
+                //         シルエットを毛羽立たせた。0.30 まで上げて縁を空ける
+                if (facing < 0.30) continue;                   // 裏側と輪郭ぎわは描かない
+                // 間引きは2つぶん。
+                //   rr / 0.70          … 上へ行くほど周が短い。一様に撒くと頂点に溜まる
+                //   0.30 + 0.70*facing … 輪郭に近いほど画面上で面が詰まる。
+                // 【対策】後者を入れないと、縁だけに密集して毛が生えたように見えた
+                if (thin > (rr / 0.70) * (0.30 + 0.70 * facing)) continue;
+
                 var rx = x * cs + z * sn, qz = -x * sn + z * cs;
                 var ry = y * ce + qz * se, rz = -y * se + qz * ce;
-                if (rz > 0.1) continue;                       // 裏側は描かない
-                var d = rz + CAM.dist, sc = CAM.f * S2 / Math.max(0.4, d);
-                ctx.fillStyle = R.next() > 0.75 ? "rgba(236,224,196,.92)" : "rgba(58,92,40,.92)";
-                ctx.fillRect(c.W / 2 + rx * sc - 1.2, c.H / 2 - ry * sc - 1.2, 2.4, 2.4);
+                var d = rz + CAM.dist, sc = CAM.f * SZ / Math.max(0.4, d);
+                // 寝ているかけらは、輪郭に近いほど小さく詰まって見える
+                var half = len * sc * 0.5 * mix(0.55, 1, facing);
+                var g = 0.72 + 0.28 * facing;
+                ctx.fillStyle = tint > 0.84
+                    ? "rgba(" + (108 * g | 0) + "," + (134 * g | 0) + "," + (64 * g | 0) + ",.95)"
+                    : "rgba(" + (46 * g | 0) + "," + (76 * g | 0) + "," + (33 * g | 0) + ",.95)";
+                ctx.save();
+                ctx.translate(c.W / 2 + rx * sc, c.H / 2 - ry * sc);
+                ctx.rotate(ang);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, half, Math.max(0.45, half * wid * mix(0.35, 1, facing)), 0, 0, TAU);
+                ctx.fill();
+                ctx.restore();
             }
         }
 
@@ -1877,9 +1925,9 @@ var FILES = [
     ["トースト", "トースト.js", "#E09B53", "13本でいちばん素直。輪郭を SDF で作り、す（気泡）を彫り、焼き色を塗る。最初に読むならこれ。"],
     ["エッグトースト", "エッグトースト.js", "#E5B45C", "トースト.js との差分。くぼみ・卵・焼き分けの3点だけで別の料理になる。17章の教材。"],
     ["たこ焼き", "たこ焼き.js", "#965821", "焼き色が形と相関する話の本命。ソースは実体、青のりは板ポリゴン、そして物理を使わない。"],
-    ["唐揚げ", "唐揚げ.js", "#AB5517", "衣の粒立ちと、揚げ色の頂点カラー焼き込み。皿への山積みは球パッキングの落下解決で作る。"],
+    ["唐揚げ", "唐揚げ.js", "#AB5517", "衣の粒立ちと、揚げ色の頂点カラー焼き込み。皿への山積みは Havok で1個ずつ落として作る。"],
     ["ウィンナー", "ウィンナー.js", "#CC6528", "弓なりの掃引と、端の結び目のひだ。当たり判定を凸包からカプセル列へ直した記録つき。"],
-    ["焼き魚（サンマ）", "焼き魚（サンマ）.js", "#142426", "修正の履歴が10項目そのまま残る。銀は metallic ではなく虹彩。焼き目は全面を覆わせない。"],
+    ["焼き魚（サンマ）", "焼き魚（サンマ）.js", "#142426", "実写に寄せた10項目の修正が、そのまま残る。銀は metallic ではなく虹彩。焼き目は全面を覆わせない。"],
     ["焼き魚（鮭）", "焼き魚（鮭）.js", "#E07852", "切り身。筋節の場を作って断面に出す。皮まで含めて1メッシュで作る。"],
     ["ご飯", "ご飯.js", "#E8DCBE", "約1400粒を1粒ずつ置く。説得力を決めるのは粒間の暗がりで、それを配置時に焼き込む。"],
     ["お寿司", "お寿司.js", "#8F1619", "ご飯.js の続き。ネタは表面ではなく包丁の切り口。霜降りは色ではなく実体。"],

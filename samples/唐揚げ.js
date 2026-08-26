@@ -5,13 +5,14 @@
 //  構成:
 //    0. CONFIG      … 寸法・盛り付け・品目プリセット
 //    1. Rng / util  … シード付き擬似乱数（再現性の担保）
-//    2. Noise       … 3D値ノイズ（形状用）/ 2D周期ノイズ（タイリング текс用）
+//    2. Noise       … 3D値ノイズ（形状用）/ 2D周期ノイズ（タイリング用）
 //    3. Mesh utils  … キューブ球・グリッド面・回転体（巻き順は実行時に自動判定）
 //    4. TextureLab  … 衣の粒立ち / ORM / 法線 / 布のチェック柄を手続き生成
 //    5. Karaage     … から揚げ1個（形状 + 揚げ色を頂点カラーに焼く）
 //    6. Tableware   … 黒皿 / レモンのくし切り / テーブルクロス
-//    7. Plating     … 山積み（球パッキングの落下解決）
-//    8. Scene / GUI
+//    7. Plating     … 山積み（Havok で1個ずつ落として解決）
+//    8. Scene       … カメラ・ライト・ポストプロセス・物理デバッグ表示
+//    9. GUI
 //
 //  実物の要点（ここを外すと「岩」や「パン」になる）:
 //    ・輪郭は球ではない。肉塊の歪み（低周波）＋衣のダマ（中周波）＋
@@ -21,6 +22,20 @@
 //    ・衣の裂け目からは下味の付いた肉が覗く。ここだけ赤茶色
 //    ・照りは油。全面均一ではなく、くぼみに溜まって局所的に滑らかになる
 //    ・1個ずつ揚げ色が違う。全部同じ色だと量産品に見える
+//
+//  今回の修正（Inspector のデバッグ表示が出ない / ずれる件）:
+//    このシーンは GUI にポストエフェクトを乗せないため activeCameras を
+//    [camera, guiCam] の2本立てにしている。UtilityLayerRenderer は
+//    「activeCameras の最後の要素」を描画カメラに選ぶので、guiCam が
+//    使われてしまう。Inspector のデバッグ表示はこの上で動いており、
+//      ・Physics Helper（PhysicsViewer）→ layerMask が合わず何も出ない
+//      ・Scene Explorer の選択ハイライト（SelectionOutlineLayer）
+//        → guiCam の投影で焼かれ、位置がずれる
+//    さらに、1フレーム描き終わると scene.activeCamera に guiCam が残るため、
+//    camera 引数を省いた scene.pick() のレイまで guiCam 基準になる
+//    （＝画面クリックで皿しか当たらない）。毎フレーム戻して直している。
+//    どちらも同じ原因なので、UtilityLayerRenderer.getRenderCamera() を
+//    プロトタイプごと差し替えて一括で直している。対策は 8-4 / 9 節を参照
 // =====================================================================
 
 var createScene = async function () {
@@ -74,6 +89,13 @@ var createScene = async function () {
         settleSpeed: 3.0, settleSpin: 3.5, settleHold: 0.35,
         settleTimeout: 4.0,        // 静止判定が通らなくても、この秒数で打ち切る
 
+        // --- 物理デバッグ表示
+        showPhysicsShapes: false,  // 起動時からワイヤーフレームを出すか
+        // Inspector 由来のデバッグ表示 —— Physics Helper の PhysicsViewer と、
+        // Scene Explorer の選択ハイライト（HighlightLayer）—— の描画カメラを、
+        // メインカメラへ自動で束縛する（8-4 節）
+        patchInspectorHelpers: true,
+
         // --- 被写界深度（数値の意味は Scene 側のコメント参照）
         dofRatio: 0.076,           // focalLength / focusDistance。大きいほど強い
         dofFStop: 2.8,             // 小さいほど強い
@@ -86,6 +108,10 @@ var createScene = async function () {
         useDOF: true,
 
         // --- GUI
+        // GUI を専用カメラ（layerMask 分離）で描くか。false にすると GUI にも
+        // Bloom / 被写界深度 / シャープンが乗るが、activeCameras が1本になるので
+        // UtilityLayerRenderer 系のデバッグ表示は何もしなくても正しく出る
+        splitGuiCamera: true,
         compactWidth: 700,         // CSS px。これ未満はスマホ扱いで初期状態を折りたたむ
         compactMinSide: 480,
         guiMaxScale: 2.2           // 折りたたみ時のGUI拡大の上限
@@ -727,7 +753,7 @@ var createScene = async function () {
         //         大量に生まれる。積み重なった状態では接触マニフォールドが
         //         毎ステップ別の面へ飛び移り、これがプルプルの主因になる。
         //         低周波成分だけの滑らかな塊にして面数を減らし、
-        //         表示メッシュのわずかに内側（0.985倍）に置く
+        //         表示メッシュのわずかに内側（0.93倍）に置く
         _hullSurface(nx, ny, nz, out) {
             const s = this.nseed, N = Noise;
             const lump = N.fbm3(nx * 1.20 + 13.1, ny * 1.20 + 4.7, nz * 1.20 + 8.3, s, 3) - 0.5;
@@ -1157,7 +1183,144 @@ var createScene = async function () {
     let onRebuilt = null;
     let queue = [], dropIndex = 0, dropTimer = 0, settleTimer = 0, postDropTimer = 0, frozen = false;
 
+    // -----------------------------------------------------------------
+    // 8-4. 物理形状のデバッグ表示
+    // -----------------------------------------------------------------
+    // 【対策】PhysicsViewer はデバッグメッシュを本体シーンではなく
+    //         UtilityLayerRenderer の別シーンに作る。そのレイヤーが使う
+    //         カメラは UtilityLayerRenderer.getRenderCamera() が決めており、
+    //
+    //             activeCameras.length > 1 なら activeCameras の「最後の要素」
+    //
+    //         という規則になっている。このシーンは GUI を後段カメラで描くため
+    //         activeCameras = [camera, guiCam] としており、そのままだと guiCam が
+    //         選ばれる。guiCam の layerMask は 0x20000000、デバッグメッシュ側は
+    //         既定の 0x0FFFFFFF なので論理積が 0 になり、何も描画されない
+    //         （たとえマスクが通っても、GUI 用カメラの視点なので皿を向いていない）。
+    //         → 生成直後に setRenderCamera(camera) でメインカメラへ固定する
+    const PhysicsViewerCtor =
+        (BABYLON.Debug && BABYLON.Debug.PhysicsViewer) || BABYLON.PhysicsViewer;
+
+    let physViewer = null;
+    let physViewerOn = !!CFG.showPhysicsShapes;
+    const shownBodies = new Set();
+
+    function bindViewerCamera(viewer) {
+        // 内部プロパティに触るのは行儀が悪いが、公開APIが無いので仕方がない
+        const ul = viewer && viewer._utilityLayer;
+        if (ul && ul.setRenderCamera) ul.setRenderCamera(camera);
+    }
+
+    function disposePhysicsViewer() {
+        if (physViewer) { physViewer.dispose(); physViewer = null; }
+        shownBodies.clear();
+    }
+
+    // 【対策】表示は「有効化した瞬間のスナップショット」になりやすい。
+    //         このシーンはボディを 0.22 秒おきに1個ずつ生やすので、
+    //         投入のたびに差分を追加する
+    function syncPhysicsViewer() {
+        if (!physViewerOn || !physicsOn || !PhysicsViewerCtor) return;
+        if (!physViewer) {
+            physViewer = new PhysicsViewerCtor(scene);
+            bindViewerCamera(physViewer);
+        }
+        const bodies = [];
+        if (plateMesh.physicsBody) bodies.push(plateMesh.physicsBody);
+        if (clothMesh && clothMesh.physicsBody) bodies.push(clothMesh.physicsBody);
+        for (const it of queue) if (it.body) bodies.push(it.body);
+        for (const b of bodies) {
+            if (shownBodies.has(b)) continue;
+            physViewer.showBody(b);
+            shownBodies.add(b);
+        }
+    }
+
+    function setPhysicsViewer(on) {
+        physViewerOn = !!on;
+        if (physViewerOn) syncPhysicsViewer(); else disposePhysicsViewer();
+    }
+
+    // 【対策】Inspector の Physics Helper から作られた PhysicsViewer にも
+    //         同じカメラ問題が起きる。scene.reservedDataStore に置かれるので、
+    //         現れたら一度だけ描画カメラを差し替える
+    let patchedInspectorViewer = null;
+
+    // 【対策】Scene Explorer で選択したメッシュの輪郭は、Inspector v2 が
+    //
+    //             new SelectionOutlineLayer("InspectorSelectionOutline",
+    //                                       utilityLayer.utilityLayerScene)
+    //
+    //         として作る。この utilityLayer は Inspector が内部の WeakMap で
+    //         抱えている自前の UtilityLayerRenderer で、こちらからは触れない。
+    //         つまり PhysicsViewer だけ個別に直しても、選択ハイライトは
+    //         別のレイヤーなので guiCam のまま残る（＝位置がずれる）。
+    //
+    //         UtilityLayerRenderer.getRenderCamera() の実装は
+    //
+    //             if (this._renderCamera) return this._renderCamera;
+    //             return activeCameras.length > 1
+    //                  ? activeCameras[activeCameras.length - 1]
+    //                  : activeCamera;
+    //
+    //         なので、プロトタイプ側で「このシーンなら常にメインカメラ」と
+    //         答えるようにすれば、いま在るものも後から生えるものも一括で直る。
+    //         シーンごとの対応表を持たせておくと、Playground を再実行して
+    //         シーンが作り直されても追従する（パッチ自体は1回だけ当てる）
+    const ULR = BABYLON.UtilityLayerRenderer;
+    if (CFG.patchInspectorHelpers && ULR) {
+        if (!ULR._karaageCameraMap) {
+            ULR._karaageCameraMap = new WeakMap();
+            const origGetRenderCamera = ULR.prototype.getRenderCamera;
+            ULR.prototype.getRenderCamera = function (getRigParentIfPossible) {
+                // setRenderCamera() で明示指定されている場合は尊重する
+                if (!this._renderCamera) {
+                    const cam = ULR._karaageCameraMap.get(this.originalScene);
+                    if (cam && !cam.isDisposed()) return cam;
+                }
+                return origGetRenderCamera.call(this, getRigParentIfPossible);
+            };
+        }
+        ULR._karaageCameraMap.set(scene, camera);
+    }
+
+    // 【対策】EffectLayer（GlowLayer など）を本体シーンに置いた場合も同様に
+    //         巻き添えになる。こちらは camera が未設定だと全カメラパスで
+    //         描画・合成され、かつ自前のレンダーリストで描くので layerMask の
+    //         フィルタも効かない。camera は getter のみなので内部を書き換える。
+    //         （Inspector の選択ハイライトは上のユーティリティレイヤー側なので、
+    //           ここには現れない。自分で GlowLayer を足したとき用の保険）
+    function bindEffectLayerCamera(layer) {
+        if (!layer) return;
+        if (layer._effectLayerOptions) layer._effectLayerOptions.camera = camera;
+        if (layer._mainTexture) layer._mainTexture.activeCamera = camera;
+    }
+    let effectLayerCount = -1;
+
+    if (CFG.patchInspectorHelpers) {
+        scene.onBeforeRenderObservable.add(() => {
+            // --- Physics Helper（UtilityLayerRenderer 系）
+            const store = scene.reservedDataStore;
+            const pv = store && store.physicsViewer;
+            if (!pv) {
+                patchedInspectorViewer = null;
+            } else if (pv !== patchedInspectorViewer) {
+                patchedInspectorViewer = pv;
+                bindViewerCamera(pv);
+            }
+            // --- 選択ハイライト（EffectLayer 系）。増減したときだけ走査する
+            const layers = scene.effectLayers || [];
+            if (layers.length !== effectLayerCount) {
+                effectLayerCount = layers.length;
+                for (const l of layers) bindEffectLayerCamera(l);
+            }
+        });
+    }
+
     function clearFood() {
+        // 【対策】ボディを捨てる前にビューアを畳む。破棄済みボディを
+        //         参照したままだと、次のフレームで例外になる
+        disposePhysicsViewer();
         for (const it of queue) {
             if (it.body) it.body.dispose();
             if (it.shape) it.shape.dispose();
@@ -1222,6 +1385,7 @@ var createScene = async function () {
         } else {
             layoutFallback(pieces, lemons, CFG, seed);
         }
+        syncPhysicsViewer();                       // 皿・テーブルのぶんだけ先に出す
         if (onRebuilt) onRebuilt();
     }
 
@@ -1264,6 +1428,7 @@ var createScene = async function () {
         it.shape = it.makeShape();
         it.body = addDynamicBody(it.mesh, it.shape, it.mass, CFG, scene);
         dropIndex++;
+        syncPhysicsViewer();                       // 生えたぶんの形状を追加
     }
 
     scene.onBeforeRenderObservable.add(() => {
@@ -1326,9 +1491,6 @@ var createScene = async function () {
     //         focusDistance = 420 などを入れると合焦面が手前に外れ、
     //         画面全体が最大ボケになる（＝全部ぼける）。
     //
-    //         coc の係数は cocPre = (lensSize / fStop) * fL / (focus - fL)。
-    //         fL を focus の一定比率にすると focus が約分されて、
-    //         カメラを寄せても引いてもボケ量が変わらない
     //         錯乱円の係数は cocPre = (lensSize / fStop) * fL / (focus - fL)。
     //         fL を focus の一定比率 K にすると focus が約分されて
     //         cocPre = (lensSize / fStop) * K / (1 - K) となり、
@@ -1352,13 +1514,34 @@ var createScene = async function () {
     // =================================================================
     // 【対策】フルスクリーンGUIは既定でシーンと同じカメラで合成されるため、
     //         Bloom / 被写界深度 / シャープンがUIにも乗ってボケる。
-    //         GUI専用カメラを layerMask で分離する
+    //         GUI専用カメラを layerMask で分離する。
+    //
+    //         ただしこの分離には副作用がある。activeCameras が2本になると、
+    //         UtilityLayerRenderer（PhysicsViewer / SkeletonViewer / Inspector の
+    //         各種ヘルパーが使う）が「最後のカメラ」を描画カメラに選ぶため、
+    //         デバッグ表示が guiCam 側へ回って消える。対策は 8-4 節。
+    //         切り分けたいだけなら CFG.splitGuiCamera を false にすれば、
+    //         activeCameras が1本に戻って何もしなくても表示される
     const GUI_MASK = 0x20000000;
-    const guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
-    guiCam.layerMask = GUI_MASK;
-    scene.activeCameras = [camera, guiCam];
+    let guiCam = null;
+    if (CFG.splitGuiCamera) {
+        guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
+        guiCam.layerMask = GUI_MASK;
+        scene.activeCameras = [camera, guiCam];
+        // 【対策】activeCameras を使うと、1フレーム描き終わった時点で
+        //         scene.activeCamera には「最後に描いたカメラ」= guiCam が
+        //         残ったままになる。scene.pick() は camera 引数を省くと
+        //         createPickingRay() の中で scene.activeCamera を使うため、
+        //         Inspector のピック（メッシュを画面上でクリックして選ぶ機能）が
+        //         guiCam 基準のレイになり、guiCam から見えている物 —— 実質、
+        //         正面に大きく写る皿 —— しか当たらなくなる。
+        //         cameraToUseForPointers は InputManager が通る経路にしか
+        //         効かないので、これとは別に毎フレーム戻しておく
+        scene.activeCamera = camera;
+        scene.onAfterRenderObservable.add(() => { scene.activeCamera = camera; });
+    }
     const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scene);
-    if (ui.layer) ui.layer.layerMask = GUI_MASK;
+    if (ui.layer && guiCam) ui.layer.layerMask = GUI_MASK;
 
     const COL = {
         idle: "#2b2521", active: "#a1621f", edge: "#4a3f36",
@@ -1409,6 +1592,8 @@ var createScene = async function () {
         lemonBtn.textBlock.text = "レモン: " + (CFG.showLemon ? "ON" : "OFF");
         dofBtn.background = CFG.useDOF ? COL.active : COL.idle;
         dofBtn.textBlock.text = "被写界深度: " + (CFG.useDOF ? "ON" : "OFF");
+        physBtn.background = physViewerOn ? COL.active : COL.idle;
+        physBtn.textBlock.text = "物理形状: " + (!physicsOn ? "物理なし" : (physViewerOn ? "ON" : "OFF"));
     }
     for (const c of [6, 8, 10]) {
         countButtons[c] = addButton("c" + c, c + " 個", () => {
@@ -1430,6 +1615,13 @@ var createScene = async function () {
     const dofBtn = addButton("dof", "被写界深度: ON", () => {
         CFG.useDOF = !CFG.useDOF;
         dp.depthOfFieldEnabled = CFG.useDOF;
+        highlight();
+    });
+    // Inspector を開かなくても物理形状を確認できるようにしておく。
+    // 盛り直しにも追従するので、こちらのほうが実用的
+    const physBtn = addButton("phys", "物理形状: OFF", () => {
+        if (!physicsOn) return;
+        setPhysicsViewer(!physViewerOn);
         highlight();
     });
     const rotateBtn = addButton("rotate", "自動回転: OFF", () => {
@@ -1506,6 +1698,9 @@ var createScene = async function () {
         applyGuiLayout();
     });
     engine.onResizeObservable.add(applyGuiLayout);
+
+    // 起動時から物理形状を出す設定なら、ここで作る
+    if (physViewerOn) setPhysicsViewer(true);
 
     onRebuilt();
     highlight();
