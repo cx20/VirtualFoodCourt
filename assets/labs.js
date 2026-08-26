@@ -389,6 +389,81 @@ function lazyLoop(cv, draw) {
     return mark;
 }
 
+/* ドラッグで視点を回す。
+
+   3Dの実験は、既定でゆっくり自動で回している。ただし自動で回っているだけだと
+   「裏はどうなっているのか」「上から見るとどうか」を確かめられない。
+   触った時点で自動回転を止め、そこから先はドラッグで向きを決められるようにする。
+
+     ・横のドラッグ … 軸のまわりの向き
+     ・縦のドラッグ … 見下ろし角（真横から、真上まで）
+     ・ダブルクリック … 元の角度に戻して、自動回転を再開する
+
+   【対策】触ったのに勝手に回り続けると、見たい角度で止められない。
+           自動回転は「その時点の角度で固定」して足し込む形にする。
+           途中で 0 に戻すと、掴んだ瞬間に絵が飛ぶ */
+function orbit(cv, o) {
+    o = o || {};
+    var st = {
+        yaw: 0,
+        elev0: o.elev == null ? 0.24 : o.elev,
+        elev: o.elev == null ? 0.24 : o.elev,
+        speed: o.speed == null ? 0.42 : o.speed,
+        auto: true,
+        touched: false,      // 一度でもドラッグされたか（既定値の差し替え判断に使う）
+        base: 0,             // 自動回転ぶん。止めた時点の角度で固定される
+        mark: o.mark || null
+    };
+    var elevMin = o.elevMin == null ? -0.50 : o.elevMin;
+    var elevMax = o.elevMax == null ? 1.30 : o.elevMax;
+    if (!cv) return st;
+
+    var drag = null;
+    cv.style.cursor = "grab";
+    cv.style.touchAction = "none";
+    cv.title = "ドラッグで回す／ダブルクリックで戻す";
+
+    cv.addEventListener("pointerdown", function (e) {
+        drag = { x: e.clientX, y: e.clientY, yaw: st.yaw, elev: st.elev };
+        st.auto = false;
+        st.touched = true;
+        cv.style.cursor = "grabbing";
+        try { cv.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+        e.preventDefault();
+    });
+    cv.addEventListener("pointermove", function (e) {
+        if (!drag) return;
+        // 画面の幅いっぱいのドラッグで、ほぼ1周ぶん回るようにする
+        var w = cv.clientWidth || 320;
+        st.yaw = drag.yaw + (e.clientX - drag.x) / w * TAU;
+        st.elev = clamp(drag.elev - (e.clientY - drag.y) / w * 2.2, elevMin, elevMax);
+        if (st.mark) st.mark();
+        e.preventDefault();
+    });
+    // 【対策】pointerleave では外さないこと。掴んだままキャンバスの外へ
+    //         出たときにドラッグが切れて、大きく回せなくなる
+    //         （setPointerCapture しているので、外に出ても追従してよい）
+    ["pointerup", "pointercancel"].forEach(function (ev) {
+        cv.addEventListener(ev, function () { drag = null; cv.style.cursor = "grab"; });
+    });
+    cv.addEventListener("dblclick", function () {
+        st.yaw = 0; st.elev = st.elev0; st.auto = true; st.touched = false;
+        if (st.mark) st.mark();
+    });
+
+    // 自動回転ぶん＋ドラッグぶん。止めているあいだ base は動かない
+    st.rot = function (now) {
+        if (st.auto) st.base = spin(now, st.speed);
+        return st.base + st.yaw;
+    };
+    // まだ触られていないときだけ、既定の見下ろし角を差し替える
+    st.setElev = function (v) {
+        st.elev0 = v;
+        if (!st.touched) st.elev = v;
+    };
+    return st;
+}
+
 function chipGroup(sel, cb) {
     var els = $$(sel + " .chip");
     els.forEach(function (b) {
@@ -510,6 +585,9 @@ function foldField(u, v, seed) {
         }
     }, N, M);
 
+    // ドラッグで視点を回せるようにする。組み上がる途中でも横から覗ける
+    var orb = orbit(cv, { elev: 0.28, speed: 0.275 });
+
     var STAGES = [
         { t: 1.5, name: "断面をひく" },
         { t: 3.0, name: "軸のまわりに点を回す" },
@@ -569,10 +647,10 @@ function foldField(u, v, seed) {
     // 【対策】倍率は、このあと renderMesh に渡す zoom と同じにすること。
     //         0.42 で計算していたときは、点の群れだけが半分の大きさで出て、
     //         面を張った瞬間に倍にふくらんで見えた
-    function drawPoints(rot, k) {
+    function drawPoints(rot, elev, k) {
         var W = c.W, H = c.H, S = Math.min(W, H) * 0.84, cx = W / 2, cy = H / 2;
         var cs = Math.cos(rot), sn = Math.sin(rot);
-        var ce = Math.cos(0.28), se = Math.sin(0.28);
+        var ce = Math.cos(elev), se = Math.sin(elev);
         var lim = Math.floor(mesh.count * clamp(k, 0, 1));
         ctx.fillStyle = "rgba(150,88,33,.85)";
         for (var i = 0; i < lim; i += 1) {
@@ -595,16 +673,16 @@ function foldField(u, v, seed) {
         var k = clamp((el - prev) / (STAGES[si].t - prev || 1), 0, 1);
 
         ctx.clearRect(0, 0, c.W, c.H);
-        var rot = spin(now, 0.55) * 0.5;
+        var rot = orb.rot(now), ev = orb.elev;
         var shown = mesh.count;
 
         if (si === 0) { drawProfileStage(k); shown = PROFILES.tako.length; }
-        else if (si === 1) { shown = drawPoints(rot, k); }
+        else if (si === 1) { shown = drawPoints(rot, ev, k); }
         else if (si === 2) {
-            renderMesh(ctx, c.W, c.H, mesh, { rot: rot, elev: 0.28, mode: "wire", zoom: 0.84 });
+            renderMesh(ctx, c.W, c.H, mesh, { rot: rot, elev: ev, mode: "wire", zoom: 0.84 });
         } else if (si === 3) {
             renderMesh(ctx, c.W, c.H, mesh, {
-                rot: rot, elev: 0.28, zoom: 0.84, mat: mat,
+                rot: rot, elev: ev, zoom: 0.84, mat: mat,
                 albedo: function (u, v) {
                     var full = albedo(u, v);
                     return mix3(CRUMB, full, clamp(k * 1.3, 0, 1));   // 生地 → 焼き色
@@ -612,7 +690,7 @@ function foldField(u, v, seed) {
             });
         } else {
             renderMesh(ctx, c.W, c.H, mesh, {
-                rot: rot, elev: 0.28, zoom: 0.84,
+                rot: rot, elev: ev, zoom: 0.84,
                 mat: { rough: 0.30, coat: 0.42, sss: 0.08, sheen: 0, sssCol: [1, .7, .35] },
                 albedo: albedoSauce
             });
@@ -626,7 +704,7 @@ function foldField(u, v, seed) {
             var R = new Rng(5);
             var SZ = Math.min(c.W, c.H) * 0.84;
             var cs = Math.cos(rot), sn = Math.sin(rot);
-            var ce = Math.cos(0.28), se = Math.sin(0.28);
+            var ce = Math.cos(ev), se = Math.sin(ev);
             for (var i = 0; i < 560; i++) {
                 // 【対策】R はこのループで毎回同じ数だけ消費する。
                 //         途中で continue して消費数が変わると、k が増えるたびに
@@ -827,6 +905,7 @@ function foldField(u, v, seed) {
     if (!pcv || !rcv) return;
     var pc = setupCanvas(pcv), rc = setupCanvas(rcv);
     var key = "dango";
+    var orb = orbit(rcv, { elev: 0.25, speed: 0.45 });
     var ctrl = cloneProfile(PROFILES.dango);
     var height = PROFILE_H.dango;
     var bump = 0.10;
@@ -888,6 +967,9 @@ function foldField(u, v, seed) {
         key = k;
         ctrl = cloneProfile(PROFILES[k]);
         height = PROFILE_H[k];
+        // 茶碗だけは、既定でもう少し見下ろしたほうが中が見える。
+        // ただし自分で角度を決めたあとは上書きしない
+        orb.setElev(k === "bowl" ? 0.45 : 0.25);
         rebuild(); drawProfile();
     }
 
@@ -924,7 +1006,7 @@ function foldField(u, v, seed) {
         if (!mesh) return;
         var m = key === "cookie" ? MATS.tako : (key === "bowl" ? MATS.rice : MATS.dango);
         renderMesh(ctx, rc.W, rc.H, mesh, {
-            rot: spin(now, 0.45), elev: key === "bowl" ? 0.45 : 0.25, zoom: 0.9,
+            rot: orb.rot(now), elev: orb.elev, zoom: 0.9,
             mat: m, albedo: function () { return m.col; }
         });
     });
@@ -940,6 +1022,7 @@ function foldField(u, v, seed) {
     var cv = $("#meshCanvas"); if (!cv) return;
     var c = setupCanvas(cv), ctx = c.ctx;
     var mode = "solid", smoothN = true, flip = false, N = 40, M = 40;
+    var orb = orbit(cv, { elev: 0.24, speed: 0.42 });
     var mesh = null;
 
     function rebuild() {
@@ -950,7 +1033,7 @@ function foldField(u, v, seed) {
     addLoop(cv, function (dt, now) {
         ctx.clearRect(0, 0, c.W, c.H);
         renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.42), elev: 0.24, zoom: 0.92,
+            rot: orb.rot(now), elev: orb.elev, zoom: 0.92,
             mode: mode, smooth: smoothN, flip: flip,
             mat: MATS.dango, albedo: function () { return MATS.dango.col; }
         });
@@ -1058,6 +1141,7 @@ function foldField(u, v, seed) {
     var cv = $("#pbrCanvas"); if (!cv) return;
     var c = setupCanvas(cv), ctx = c.ctx;
     var base = MATS.dango, mat = copyMat(base);
+    var orb = orbit(cv, { elev: 0.22, speed: 0.40 });
     var mesh = buildMesh(makeShape(PROFILES.dango, { height: PROFILE_H.dango, bump: 0.045, seed: 11 }), 44, 46);
     var out = $("#pbrOut");
 
@@ -1075,7 +1159,7 @@ function foldField(u, v, seed) {
     addLoop(cv, function (dt, now) {
         ctx.clearRect(0, 0, c.W, c.H);
         renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.4), elev: 0.22, zoom: 0.92,
+            rot: orb.rot(now), elev: orb.elev, zoom: 0.92,
             mat: mat, albedo: function () { return base.col; }
         });
     });
@@ -1308,6 +1392,7 @@ function foldField(u, v, seed) {
     var cv = $("#sweepCanvas"); if (!cv) return;
     var c = setupCanvas(cv), ctx = c.ctx;
     var kind = "wiener", bend = 0.06, plump = 0.06, flat = 1.0, ring = false;
+    var orb = orbit(cv, { elev: 0.30, speed: 0.105 });
     var mesh = null;
 
     // 体型。u=0 が頭（左）、u=1 が尾
@@ -1348,7 +1433,7 @@ function foldField(u, v, seed) {
             ? { rough: 0.30, coat: 0.30, sss: 0.10, sheen: 0.10, sssCol: [0.9, 0.9, 1.0] }
             : MATS.wiener;
         renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.30) * 0.35 + 0.25, elev: 0.30, zoom: 1.15, cull: true,
+            rot: orb.rot(now) + 0.25, elev: orb.elev, zoom: 1.15, cull: true,
             mode: ring ? "wire" : "solid",
             mat: m,
             albedo: function (u, v) {
@@ -1388,6 +1473,7 @@ function foldField(u, v, seed) {
     var mat = copyMat(MATS.dango);
     mat.expo = 1; mat.ambK = 1; mat.tonemap = true;
     var keyDeg = -40;
+    var orb = orbit(cv, { elev: 0.22, speed: 0.36 });
     var mesh = buildMesh(makeShape(PROFILES.dango, { height: PROFILE_H.dango, bump: 0.05, seed: 8 }), 44, 46);
     var out = $("#sceneOut");
 
@@ -1406,7 +1492,7 @@ function foldField(u, v, seed) {
         ctx.clearRect(0, 0, c.W, c.H);
         var a = keyDeg * Math.PI / 180;
         renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.36), elev: 0.22, zoom: 0.92, mat: mat,
+            rot: orb.rot(now), elev: orb.elev, zoom: 0.92, mat: mat,
             light: [Math.sin(a), 0.72, -Math.cos(a)],
             albedo: function () { return MATS.dango.col; }
         });
@@ -1424,6 +1510,7 @@ function foldField(u, v, seed) {
     var cv = $("#maillardCanvas"); if (!cv) return;
     var c = setupCanvas(cv), ctx = c.ctx;
     var mode = "corr", amt = 0.5, relief = 0.55;
+    var orb = orbit(cv, { elev: 0.26, speed: 0.38 });
     var out = $("#maillardOut");
     var mesh = null;
 
@@ -1456,7 +1543,7 @@ function foldField(u, v, seed) {
     addLoop(cv, function (dt, now) {
         ctx.clearRect(0, 0, c.W, c.H);
         renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.38), elev: 0.26, zoom: 0.92,
+            rot: orb.rot(now), elev: orb.elev, zoom: 0.92,
             mat: MATS.tako, albedo: albedo
         });
     });
@@ -1588,6 +1675,7 @@ function foldField(u, v, seed) {
     var cv = $("#sssCanvas"); if (!cv) return;
     var c = setupCanvas(cv), ctx = c.ctx;
     var key = "dango", amt = 0.45, deg = 40;
+    var orb = orbit(cv, { elev: 0.20, speed: 0.34 });
     var out = $("#sssOut");
     var mesh = buildMesh(makeShape(PROFILES.dango, { height: PROFILE_H.dango, bump: 0.04, seed: 6 }), 44, 46);
     var PRE = {
@@ -1602,7 +1690,7 @@ function foldField(u, v, seed) {
         var m = copyMat(base); m.sss = amt;
         var a = deg * Math.PI / 180;
         renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.34), elev: 0.2, zoom: 0.92, mat: m,
+            rot: orb.rot(now), elev: orb.elev, zoom: 0.92, mat: m,
             light: [Math.sin(a), 0.55, -Math.cos(a)],
             albedo: function () { return base.col; }
         });
