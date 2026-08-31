@@ -322,7 +322,7 @@ ${cards(part2)}
   <div class="body" style="max-width:none">
     <div class="hub">
       <a class="hubcard" href="zukan.html" style="--ch:var(--p-koge)">
-        <span class="no">13<span style="opacity:.55;margin-left:8px">FILES</span></span>
+        <span class="no">14<span style="opacity:.55;margin-left:8px">FILES</span></span>
         <h3>どのファイルで、何が学べるか</h3>
         <p>14本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
       </a>
@@ -360,7 +360,7 @@ function zukanPage() {
   <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>図鑑</p>
 <section class="chapter" id="zukan" style="--ch:var(--p-koge)">
   <div class="chapter-head">
-    <div class="chnum">13<small>FILES</small></div>
+    <div class="chnum">14<small>FILES</small></div>
     <div>
       <h2>どのファイルで、何が学べるか</h2>
       <p class="sub">14本それぞれに、そこでしか出てこない技術がある</p>
@@ -462,7 +462,7 @@ function viewPage() {
   </div>
 </section>
   <div class="pager">
-    <a class="prev" href="zukan.html"><span class="dir">← まえへ</span><span class="ttl">13 どのファイルで、何が学べるか</span></a>
+    <a class="prev" href="zukan.html"><span class="dir">← まえへ</span><span class="ttl">14 どのファイルで、何が学べるか</span></a>
     <a class="next" href="terms.html"><span class="dir">つぎへ →</span><span class="ttl">用語 コードに出てくる言葉</span></a>
   </div>
 </div>
