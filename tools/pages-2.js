@@ -349,7 +349,9 @@ mat.subSurface.translucencyIntensity = <span class="n">0.45</span>;</pre>
       法線と粗さも一緒に変えないと霜降りになりません。</p>
       <p><b>透けを強くしすぎると、光る風船になります。</b>
       subSurface は「ぼんやり光る」ので、上げるほど良く見えがちです。
-      14本のサンプルの値はだいたい 0.2〜0.5 で、1.0 に近い値はどこにもありません。</p>
+      14本のサンプルの値は、身のあるもので 0.4〜0.7（赤身 0.55 / 中トロ 0.62 / 大トロ 0.70、
+      団子は白玉 0.52 / 桜 0.55 / 白 0.62、ご飯 0.45）。削り節やひれのように「透けて当然」の薄いものでも 0.85 止まりで、
+      1.0 に近い値はどこにもありません。</p>
     </div>`,
   tryIt: [
     "「白玉」で透けを 0 にして、何に見えるか言葉にする。",
@@ -503,10 +505,10 @@ colors.push(k, k, k, <span class="n">1</span>);                    <span class="
 <span class="k">let</span> r = R;
 <span class="k">for</span> (<span class="k">const</span> c of contacts) {
     <span class="k">const</span> d = dot(dir, c.n);
-    <span class="k">if</span> (d &gt; <span class="n">0</span>) r = smin(r, c.dist / d, <span class="n">0.18</span>);  <span class="c">// なめらかな最小値</span>
+    <span class="k">if</span> (d &gt; <span class="n">0</span>) r = smin(r, c.dist / d, R * <span class="n">0.090</span>);  <span class="c">// なめらかな最小値</span>
 }
 <span class="c">// 切り取った球冠の体積ぶんだけ全体を膨らませる（餅は非圧縮）</span>
-r *= <span class="n">1</span> + volumeLoss * <span class="n">0.33</span>;</pre>
+r *= Math.cbrt(<span class="n">1</span> + volumeLoss / sphereVolume);</pre>
       <figcaption>月見団子.js。smin（多項式スムーズ最小値）が「丸い土手」を作る</figcaption>
     </figure>
 
@@ -645,7 +647,7 @@ r *= <span class="n">1</span> + volumeLoss * <span class="n">0.33</span>;</pre>
     <p>
       設計としての利点はここです。
       法線マップの V の符号を間違えていたことに気づいたとします。
-      14本に同じ間違いが独立して書かれていたら、13か所直すことになります。
+      14本に同じ間違いが独立して書かれていたら、14か所直すことになります。
       実際には、団子シリーズ4本のコメントに
       <b>「法線マップの V の符号は (yd − yu)。Babylon の接空間は V が下向き」</b>
       と同じ注意が書き写されています。<b>1本で分かったことが、次の1本に持ち越されている</b>。

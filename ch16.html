@@ -79,10 +79,10 @@
 <span class="k">let</span> r = R;
 <span class="k">for</span> (<span class="k">const</span> c of contacts) {
     <span class="k">const</span> d = dot(dir, c.n);
-    <span class="k">if</span> (d &gt; <span class="n">0</span>) r = smin(r, c.dist / d, <span class="n">0.18</span>);  <span class="c">// なめらかな最小値</span>
+    <span class="k">if</span> (d &gt; <span class="n">0</span>) r = smin(r, c.dist / d, R * <span class="n">0.090</span>);  <span class="c">// なめらかな最小値</span>
 }
 <span class="c">// 切り取った球冠の体積ぶんだけ全体を膨らませる（餅は非圧縮）</span>
-r *= <span class="n">1</span> + volumeLoss * <span class="n">0.33</span>;</pre>
+r *= Math.cbrt(<span class="n">1</span> + volumeLoss / sphereVolume);</pre>
       <figcaption>月見団子.js。smin（多項式スムーズ最小値）が「丸い土手」を作る</figcaption>
     </figure>
 

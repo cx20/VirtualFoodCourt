@@ -1395,15 +1395,31 @@ function foldField(u, v, seed) {
     var orb = orbit(cv, { elev: 0.30, speed: 0.105 });
     var mesh = null;
 
+    // 秋刀魚の体高。焼き魚（サンマ）.js が線画から実測した表をそのまま使う
+    // （最大体高を 1 とした比。u=0 が吻端、u=1 が尾柄）
+    // 【対策】ここは以前、山を1つ置いた式（ピーク u=0.22、幅 0.30）で
+    //         近似していた。2か所まちがえていて、木の葉に見えていた。
+    //         ・最大体高は u≒0.22 ではなく u≒0.39。鰓蓋のすぐ後ろではなく、
+    //           胴の中ほど
+    //         ・胴の後半が早く細りすぎ。実測では u=0.48 でまだ 0.99 あるのに、
+    //           山の式では 0.60 まで落ちていた。だから頭寄りだけが膨らんだ
+    var SANMA_D = [
+        { t: 0.000, r: 0.075 }, { t: 0.030, r: 0.190 }, { t: 0.060, r: 0.360 },
+        { t: 0.095, r: 0.545 }, { t: 0.130, r: 0.720 }, { t: 0.175, r: 0.888 },
+        { t: 0.225, r: 0.972 }, { t: 0.300, r: 0.996 }, { t: 0.390, r: 1.000 },
+        { t: 0.480, r: 0.988 }, { t: 0.570, r: 0.945 }, { t: 0.665, r: 0.858 },
+        { t: 0.760, r: 0.712 }, { t: 0.850, r: 0.458 }, { t: 0.920, r: 0.302 },
+        { t: 0.965, r: 0.226 }, { t: 1.000, r: 0.180 }
+    ];
+    // 【対策】比だけ合っていても、全長との釣り合いを外すと魚に見えない。
+    //         秋刀魚は全長 30cm に対し体高 4.15cm で、7:1 を超える細長さ。
+    //         軸の長さ LEN=2.5 が 30cm ぶんなので、最大半径は
+    //         4.15 / 2 / 12 = 0.173。以前は 0.45 あり、2.8:1 の魚だった
+    var SANMA_R = 0.173;
+
     // 体型。u=0 が頭（左）、u=1 が尾
     function bodyR(u) {
-        if (kind === "sanma") {
-            // 【対策】体高のピークは u≒0.22（鰓蓋直後）。0.30 だと頭が大きく見える
-            var head = smooth(0.0, 0.14, u);
-            var peak = Math.exp(-Math.pow((u - 0.22) / 0.30, 2));
-            var tail = 1 - smooth(0.72, 1.0, u) * 0.86;
-            return (0.10 + 0.34 * peak) * head * tail + 0.012;
-        }
+        if (kind === "sanma") return sampleProfile(SANMA_D, u) * SANMA_R;
         // ウィンナー。ほぼ平行で、端は結び目に向かって細る
         return 0.30 * Math.pow(Math.sin(Math.PI * clamp(u * 1.06 - 0.03, 0, 1)), 0.28) + 0.004;
     }
@@ -1700,7 +1716,7 @@ function foldField(u, v, seed) {
         out.innerHTML = PRE[key].name + " / 透け " + f2(amt) +
             "<br>" + (amt < 0.06
                 ? "<b style='color:#8F1619'>透けなし ＝ " + PRE[key].off + "</b>"
-                : amt > 0.85 ? "<b style='color:#8F1619'>強すぎ。光る風船です（実物の値は 0.2〜0.5）</b>"
+                : amt > 0.85 ? "<b style='color:#8F1619'>強すぎ。光る風船です（実物の値は 0.4〜0.7）</b>"
                     : (deg > 95 ? "逆光。薄い縁が抜けています" : "光を後ろへ回すと、透けがよく見えます"));
     }
     chipGroup("#sssPreset", function (v) { key = v; say(); });
@@ -1791,10 +1807,15 @@ function foldField(u, v, seed) {
     var amt = 0.30, useVol = true, useRim = true, useStack = true, mark;
     var out = $("#squashOut");
 
-    // 三方に積んだ団子（横から見た断面）。下が4個、上が3・2・1
+    // 三方に積んだ団子を、正面から切った断面。
+    // 【対策】以前は 4・3・2・1 の10個を積んでいた。月見団子.js の既定は
+    //         十五夜の 9 + 4 + 2 = 15個（3x3 / 2x2 / 2個を縦に並べる）で、
+    //         正面から切ると 3・2・1 に見える。同じ章の本文が
+    //         「15個を三方に積みます（9 + 4 + 2）」と書いているのに、
+    //         その下の実験だけ別の積み方になっていた
     var R0 = 40, GY = 320;
     function layout() {
-        var rows = [4, 3, 2, 1], balls = [], y = GY - R0;
+        var rows = [3, 2, 1], balls = [], y = GY - R0;
         for (var r = 0; r < rows.length; r++) {
             var n = rows[r];
             for (var i = 0; i < n; i++) {
@@ -1851,6 +1872,8 @@ function foldField(u, v, seed) {
                 if (d > R0 * 2.2 || d < 1) continue;
                 contacts.push({ nx: dx / d, ny: dy / d, dist: d / 2 * (1 - press * 0.62) });
             }
+            // 縁の丸み。月見団子.js は R x 0.090 だが、それでは画面上 4px 弱に
+            // なって切り口との差が見えないので、ここでは誇張してある
             var k = useRim ? R0 * 0.30 : 0;
             // 潰して減った面積を測る（体積の代わり）
             var STEP = 84, base = 0, cur = 0, rs = [];
@@ -1878,7 +1901,8 @@ function foldField(u, v, seed) {
         }
         if (out) {
             var avg = totalLoss / balls.length;
-            out.innerHTML = "10個 / 平均で断面の " + (avg * 100).toFixed(1) + "% が潰れています<br>" +
+            out.innerHTML = "十五夜（9 + 4 + 2 = 15個）の断面 " + balls.length +
+                " 個 / 平均で断面の " + (avg * 100).toFixed(1) + "% が潰れています<br>" +
                 (!useVol && !useRim && amt < 0.02
                     ? "<b style='color:#8F1619'>ただの球。発泡スチロールに見えます</b>"
                     : (useVol ? "" : "<b style='color:#8F1619'>体積が戻っていません（やせた球）</b><br>") +
