@@ -83,7 +83,7 @@
     <span class="k">const</span> c = h2(xi, yi + <span class="n">1</span>, seed), d = h2(xi + <span class="n">1</span>, yi + <span class="n">1</span>, seed);
     <span class="k">return</span> mix(mix(a, b, u), mix(c, d, u), v);
 };</pre>
-      <figcaption>13本すべてに、ほぼこの形で入っている</figcaption>
+      <figcaption>14本すべてに、ほぼこの形で入っている</figcaption>
     </figure>
 
     <h3>1枚では足りない。だから重ねる</h3>
@@ -143,7 +143,7 @@
       ウィンナーや秋刀魚のように<b>筒の表面に模様を巻く</b>とき、
       ふつうのノイズを使うと、一周して戻ってきたところで模様が切れて縦の線が入ります。
       そこで、横方向（u）だけ格子の番号を周期で折り返した専用のノイズを使います。
-      13本のうち筒状のものには、必ずこの <code>v2u</code> が入っています。
+      14本のうち筒状のものには、必ずこの <code>v2u</code> が入っています。
     </p>
     <div class="trap">
       <span class="label">つまずきポイント</span>

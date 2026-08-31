@@ -1,7 +1,7 @@
 /* =====================================================================
  *  たべもののつくりかた — play.html の動作確認
  *
- *  実行:  node tools/verify-play.js            （13本ぜんぶ）
+ *  実行:  node tools/verify-play.js            （14本ぜんぶ）
  *         node tools/verify-play.js トースト   （名前で絞り込み。部分一致）
  *
  *  tools/shoot.js は「サンプルを直に読み込んで実行する専用ページ」で撮る。

@@ -6,7 +6,7 @@
  *  生成するもの:
  *    ・index.html / start.html / ch01〜ch17.html /
  *      zukan.html / view.html / terms.html / play.html   … 全23ページ
- *    ・assets/src/*.src.js  … 13本のサンプルをビューア用に複製
+ *    ・assets/src/*.src.js  … 14本のサンプルをビューア用に複製
  *                             （.gitignore 済み。再生成はこれで行う）
  *
  *  【注意】上記のファイルは毎回まるごと上書きされます。
@@ -17,7 +17,7 @@
  *  入力:
  *    ・tools/pages-1.js  … 第I部（00〜11章）の本文
  *    ・tools/pages-2.js  … 第II部（12〜17章）の本文
- *    ・samples/*.js（13本） … ビューア用の複製元
+ *    ・samples/*.js（14本） … ビューア用の複製元
  *
  *  手書きで管理しているもの（このスクリプトは触りません）:
  *    ・assets/site.css / assets/labs.js / assets/play.js
@@ -181,7 +181,7 @@ function hubCard(p) {
 
 /* トップの各カードに出す1行。章の見出しだけでは中身が分からないので別に持つ */
 const LEDE = {
-  "start.html": "インストールなし。ブラウザだけで13本を動かす手順。まずここから。",
+  "start.html": "インストールなし。ブラウザだけで14本を動かす手順。まずここから。",
   "ch01.html": "モデルファイルも写真も読み込まず、実行した瞬間に座標と模様を計算で作る。",
   "ch02.html": "Math.random() を使わない理由。種を渡すと毎回同じ結果になる乱数を自分で書く。",
   "ch03.html": "となり合う値がなめらかにつながる乱数。重ねると焼きムラや生地の肌理になる。",
@@ -214,7 +214,7 @@ function indexPage() {
       <p class="eyebrow">Babylon.js / procedural food</p>
       <h1>3Dの料理は、<br><span class="accent">数式から焼ける</span>。</h1>
       <p class="lede">
-        このサイトで扱う13本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        このサイトで扱う14本のプログラムは、3Dモデルも写真も1枚も読み込みません。
         点の座標を計算で並べ、焼き色をその場で描き、たれの濃さを厚みから解く。
         絵を描く技術ではなく、形と質感を組み立てる技術です。
         中学・高校の数学で追えるところから順に見ていきます。
@@ -315,7 +315,7 @@ ${cards(part2)}
   <div class="chapter-head">
     <div class="chnum" style="font-size:15px">資料<small style="opacity:.7">REFERENCE</small></div>
     <div>
-      <h2>13本を引く</h2>
+      <h2>14本を引く</h2>
       <p class="sub">ファイルから逆に読みたいとき</p>
     </div>
   </div>
@@ -324,12 +324,12 @@ ${cards(part2)}
       <a class="hubcard" href="zukan.html" style="--ch:var(--p-koge)">
         <span class="no">13<span style="opacity:.55;margin-left:8px">FILES</span></span>
         <h3>どのファイルで、何が学べるか</h3>
-        <p>13本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
+        <p>14本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
       </a>
       <a class="hubcard" href="view.html" style="--ch:var(--p-karaage)">
         <span class="no">SRC<span style="opacity:.55;margin-left:8px">SOURCE</span></span>
         <h3>サンプルのソースを読む</h3>
-        <p>13本の .js をその場で表示。コピーすれば、そのまま Playground に貼れます。</p>
+        <p>14本の .js をその場で表示。コピーすれば、そのまま Playground に貼れます。</p>
       </a>
       <a class="hubcard" href="terms.html" style="--ch:var(--p-choco)">
         <span class="no">用語<span style="opacity:.55;margin-left:8px">GLOSSARY</span></span>
@@ -345,7 +345,7 @@ ${cards(part2)}
 
   return shell({
     title: SITE + " — コードで料理をつくる技術ノート",
-    desc: "Babylon.js で料理を手続き的に生成する13本のサンプルを、中学生・高校生向けに解説する学習ポータル",
+    desc: "Babylon.js で料理を手続き的に生成する14本のサンプルを、中学生・高校生向けに解説する学習ポータル",
     current: "index.html",
     main: main
   });
@@ -363,7 +363,7 @@ function zukanPage() {
     <div class="chnum">13<small>FILES</small></div>
     <div>
       <h2>どのファイルで、何が学べるか</h2>
-      <p class="sub">13本それぞれに、そこでしか出てこない技術がある</p>
+      <p class="sub">14本それぞれに、そこでしか出てこない技術がある</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -386,7 +386,7 @@ function zukanPage() {
 </main>`;
   return shell({
     title: "どのファイルで、何が学べるか — " + SITE,
-    desc: "13本の一覧と、それぞれの難所",
+    desc: "14本の一覧と、それぞれの難所",
     current: "zukan.html",
     // tools/shoot.js が書き出したサムネイル一覧。無ければカードだけ出る
     head: '<script src="assets/thumbs/thumbs.js" defer></script>\n',
@@ -403,7 +403,7 @@ function viewPage() {
     <div class="chnum" style="font-size:13px">src<small style="opacity:.7">SOURCE</small></div>
     <div>
       <h2>サンプルのソースを読む</h2>
-      <p class="sub">13本の .js を、そのまま表示します</p>
+      <p class="sub">14本の .js を、そのまま表示します</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -467,7 +467,7 @@ function viewPage() {
   </div>
 </div>
 </main>`;
-  return shell({ title: "サンプルのソースを読む — " + SITE, desc: "13本の .js を行番号つきで表示します", current: "view.html", main: main });
+  return shell({ title: "サンプルのソースを読む — " + SITE, desc: "14本の .js を行番号つきで表示します", current: "view.html", main: main });
 }
 
 /* 用語。左が語、右が意味。labs.js が絞り込みを付ける */
