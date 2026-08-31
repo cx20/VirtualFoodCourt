@@ -54,7 +54,7 @@
     <div class="recap">
       <span class="label">この章の3行まとめ</span>
       <ul>
-        <li>全13本とも <code>Math.random()</code> を使っていません。代わりに<b>自分で乱数を書いて</b>います。</li>
+        <li>全14本とも <code>Math.random()</code> を使っていません。代わりに<b>自分で乱数を書いて</b>います。</li>
         <li>「種（シード）」という整数をひとつ渡すと、<b>何度実行しても同じ並びの数</b>が出てきます。</li>
         <li>同じ形が二度と作れないと、直すことも、比べることもできないからです。</li>
       </ul>
@@ -82,7 +82,7 @@
         <span class="k">return</span> ((t ^ (t &gt;&gt;&gt; <span class="n">14</span>)) &gt;&gt;&gt; <span class="n">0</span>) / <span class="n">4294967296</span>;
     };
 };</pre>
-      <figcaption>13本すべてに、ほぼこの形で入っている。名前は mulberry32</figcaption>
+      <figcaption>14本すべてに、ほぼこの形で入っている。名前は mulberry32</figcaption>
     </figure>
     <p>
       中身は「かき混ぜて、上の桁と下の桁をぶつけて、また混ぜる」だけです。
@@ -124,7 +124,7 @@
 <pre><span class="c">// 個体ごとに種をずらす。同じ列でも i が違えば別の個体になる</span>
 <span class="k">const</span> rnd  = Rng(seed + i * <span class="n">1013</span>);      <span class="c">// 形</span>
 <span class="k">const</span> rndB = Rng(seed + i * <span class="n">1013</span> + <span class="n">77</span>); <span class="c">// 焼き色</span></pre>
-      <figcaption>種に「ずらす数」を足して枝分かれさせる。13本に共通のやり方</figcaption>
+      <figcaption>種に「ずらす数」を足して枝分かれさせる。14本に共通のやり方</figcaption>
     </figure>
     <div class="trap">
       <span class="label">つまずきポイント</span>
