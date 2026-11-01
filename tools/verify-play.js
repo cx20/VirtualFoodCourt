@@ -1,7 +1,7 @@
 /* =====================================================================
  *  たべもののつくりかた — play.html の動作確認
  *
- *  実行:  node tools/verify-play.js            （14本ぜんぶ）
+ *  実行:  node tools/verify-play.js            （39本ぜんぶ）
  *         node tools/verify-play.js トースト   （名前で絞り込み。部分一致）
  *
  *  tools/shoot.js は「サンプルを直に読み込んで実行する専用ページ」で撮る。
@@ -28,6 +28,9 @@ const SAMPLES = path.join(ROOT, "samples");
 const PORT = +(process.env.VERIFY_PORT || 8788);
 const DBG = +(process.env.VERIFY_DBG_PORT || 9344);
 const TIMEOUT = +(process.env.VERIFY_TIMEOUT || 600000);
+// 描画ループを見張る時間。SSAO2 を使うサンプル（牛丼・生姜焼き・フランスパン）は
+// SwiftShader だと1枚に数秒かかるので、3秒では1枚も進まないことがある
+const FRAME_WAIT = +(process.env.VERIFY_FRAME_WAIT || 3000);
 
 const only = process.argv[2];
 const files = fs.readdirSync(SAMPLES)
@@ -163,7 +166,7 @@ async function evalOn(page, expr) {
 
       // 描画ループが本当に回っているか（1枚も進まないなら固まっている）
       const n1 = await evalOn(page, "window.__playScene.getEngine().frameId||0");
-      await sleep(3000);
+      await sleep(FRAME_WAIT);
       const n2 = await evalOn(page, "window.__playScene.getEngine().frameId||0");
       if (!(n2 > n1)) throw new Error("描画ループが回っていません");
 

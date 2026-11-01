@@ -1,7 +1,7 @@
 /* =====================================================================
  *  たべもののつくりかた — 図鑑用サムネイルの収録
  *
- *  実行:  node tools/shoot.js            （14本ぜんぶ）
+ *  実行:  node tools/shoot.js            （39本ぜんぶ）
  *         node tools/shoot.js トースト   （名前で絞り込み。部分一致）
  *
  *  やっていること:
@@ -17,10 +17,10 @@
  *          置いたものを使い回すので、ネットが不安定でも止まりません）。
  *          GPU が無くても SwiftShader で描けます。
  *
- *  【注意】この14本は野菜編より1本あたりが重いです。模様を画像として
+ *  【注意】このサンプルは野菜編より1本あたりが重いです。模様を画像として
  *          持たず、1024x1024 のテクスチャを実行時に何枚も CPU で焼くため
  *          （たこ焼きは4柄 x 3枚、チョコレートは8種ぶん）。
- *          組み立てだけで1〜3分かかるものがあり、14本で20〜40分見てください。
+ *          組み立てだけで1〜5分かかるものがあり、39本だと1時間半〜2時間見てください。
  *
  *  再収録が要るのは「サンプルの見た目を変えたとき」だけです。
  *  生成物は assets/thumbs/ に入り、リポジトリに入れて配ります:
@@ -407,7 +407,10 @@ const server = http.createServer((req, res) => {
     const p = path.join(SAMPLES, name);
     if (!fs.existsSync(p) || path.dirname(p) !== SAMPLES) { res.writeHead(404); return res.end(); }
     // Playground 用の行なので、素の <script> では構文エラーになる。落とす
-    const code = fs.readFileSync(p, "utf8").replace(/^export default createScene;\s*$/m, "");
+    // （宣言の頭の export も同じ。餃子.js は「export const createScene = …」）
+    const code = fs.readFileSync(p, "utf8")
+      .replace(/^export default createScene;\s*$/m, "")
+      .replace(/^(\s*)export\s+(?=(?:const|let|var|async|function)\b)/gm, "$1");
     res.writeHead(200, { "content-type": "application/javascript; charset=utf-8" });
     return res.end(code);
   }
@@ -557,7 +560,9 @@ function findChrome() {
   for (const f of files) {
     const label = f.replace(/\.js$/, "");
     // 皿に落として積むサンプルだけ物理を使う。1皿を据えて撮るものは使わない
-    const needsPhysics = fs.readFileSync(path.join(SAMPLES, f), "utf8").includes("HavokPhysics()");
+    // （餃子.js のように Havok を書いてあっても既定で切っている「usePhysics: false」は除く）
+    const srcText = fs.readFileSync(path.join(SAMPLES, f), "utf8");
+    const needsPhysics = srcText.includes("HavokPhysics()") && !/usePhysics:\s*false/.test(srcText);
     process.stdout.write("  " + label.padEnd(14, "　") + " ");
     const t0 = Date.now();
     let page = null;

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>サンプルのソースを読む — たべもののつくりかた</title>
-<meta name="description" content="14本の .js を行番号つきで表示します">
+<meta name="description" content="39本の .js を行番号つきで表示します">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/labs.js" defer></script>
 </head>
@@ -32,6 +32,10 @@
       <a href="ch15.html">15 粒</a>
       <a href="ch16.html">16 潰れ</a>
       <a href="ch17.html">17 差分</a>
+      <a href="ch18.html">18 衣</a>
+      <a href="ch19.html">19 麺</a>
+      <a href="ch20.html">20 汁</a>
+      <a href="ch21.html">21 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html" aria-current="page">ソース</a>
       <a href="terms.html">用語</a>
@@ -47,7 +51,7 @@
     <div class="chnum" style="font-size:13px">src<small style="opacity:.7">SOURCE</small></div>
     <div>
       <h2>サンプルのソースを読む</h2>
-      <p class="sub">14本の .js を、そのまま表示します</p>
+      <p class="sub">39本の .js を、そのまま表示します</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -90,8 +94,10 @@
         <tr><td>3. Mesh utils</td><td>巻き順の判定・法線の溶接・掃引</td><td><a href="ch05.html">05 面と法線</a> / <a href="ch10.html">10 曲がり</a></td></tr>
         <tr><td>4. Fields / Section / Shape</td><td>断面のテーブル、外形、焼き色の場、垂れの輪郭</td><td><a href="ch04.html">04 かたち</a> / <a href="ch12.html">12 焼き色</a></td></tr>
         <tr><td>5. TextureLab</td><td>アルベド・ORM・法線・厚みの生成</td><td><a href="ch06.html">06 テクスチャ</a> / <a href="ch13.html">13 たれ</a> / <a href="ch14.html">14 透け</a></td></tr>
-        <tr><td>6〜7. 本体 / トッピング</td><td>その料理そのものの組み立てと、上に乗るもの</td><td><a href="ch09.html">09 部品</a> / <a href="ch15.html">15 粒</a></td></tr>
-        <tr><td>7〜8. 皿 / 板 / トレイ</td><td>器と、その上への配置</td><td><a href="ch08.html">08 物理</a> / <a href="ch16.html">16 潰れ</a></td></tr>
+        <tr><td>6〜7. 本体 / トッピング</td><td>その料理そのものの組み立てと、上に乗るもの</td><td><a href="ch09.html">09 部品</a> / <a href="ch15.html">15 粒</a> / <a href="ch18.html">18 衣</a></td></tr>
+        <tr><td>Strands / Relax</td><td>麺の芯線と、押し合いの緩和（麺のファイルだけ）</td><td><a href="ch19.html">19 麺</a></td></tr>
+        <tr><td>Submerge / Broth / Roux / Glaze</td><td>液面の下の最上点、汁面、ルウ、煮汁の膜（汁物のファイルだけ）</td><td><a href="ch20.html">20 汁</a></td></tr>
+        <tr><td>7〜8. 皿 / 板 / トレイ / 盛り付け</td><td>器と、その上への配置</td><td><a href="ch08.html">08 物理</a> / <a href="ch16.html">16 潰れ</a> / <a href="ch21.html">21 盛る</a></td></tr>
         <tr><td>8〜9. Scene</td><td>光・影・露出・被写界深度</td><td><a href="ch11.html">11 光</a></td></tr>
         <tr><td>9〜10. GUI</td><td>右下のスライダー</td><td>—</td></tr>
       </table>
@@ -106,7 +112,7 @@
   </div>
 </section>
   <div class="pager">
-    <a class="prev" href="zukan.html"><span class="dir">← まえへ</span><span class="ttl">14 どのファイルで、何が学べるか</span></a>
+    <a class="prev" href="zukan.html"><span class="dir">← まえへ</span><span class="ttl">39 どのファイルで、何が学べるか</span></a>
     <a class="next" href="terms.html"><span class="dir">つぎへ →</span><span class="ttl">用語 コードに出てくる言葉</span></a>
   </div>
 </div>

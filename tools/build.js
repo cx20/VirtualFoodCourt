@@ -4,9 +4,9 @@
  *  実行:  node tools/build.js   （リポジトリのどこからでも可）
  *
  *  生成するもの:
- *    ・index.html / start.html / ch01〜ch17.html /
- *      zukan.html / view.html / terms.html / play.html   … 全23ページ
- *    ・assets/src/*.src.js  … 14本のサンプルをビューア用に複製
+ *    ・index.html / start.html / ch01〜ch21.html /
+ *      zukan.html / view.html / terms.html / play.html   … 全27ページ
+ *    ・assets/src/*.src.js  … 39本のサンプルをビューア用に複製
  *                             （.gitignore 済み。再生成はこれで行う）
  *
  *  【注意】上記のファイルは毎回まるごと上書きされます。
@@ -17,7 +17,8 @@
  *  入力:
  *    ・tools/pages-1.js  … 第I部（00〜11章）の本文
  *    ・tools/pages-2.js  … 第II部（12〜17章）の本文
- *    ・samples/*.js（14本） … ビューア用の複製元
+ *    ・tools/pages-3.js  … 第III部（18〜21章）の本文
+ *    ・samples/*.js（39本） … ビューア用の複製元
  *
  *  手書きで管理しているもの（このスクリプトは触りません）:
  *    ・assets/site.css / assets/labs.js / assets/play.js
@@ -37,7 +38,7 @@ const SAMPLES = path.join(ROOT, "samples");
 const SITE = "たべもののつくりかた";
 const TAGLINE = "Babylon.js による、料理の手続き的モデリングの学習ノート";
 
-const chapters = [].concat(require("./pages-1.js"), require("./pages-2.js"));
+const chapters = [].concat(require("./pages-1.js"), require("./pages-2.js"), require("./pages-3.js"));
 
 /* ---------------------------------------------------------------
    ナビゲーション
@@ -181,7 +182,7 @@ function hubCard(p) {
 
 /* トップの各カードに出す1行。章の見出しだけでは中身が分からないので別に持つ */
 const LEDE = {
-  "start.html": "インストールなし。ブラウザだけで14本を動かす手順。まずここから。",
+  "start.html": "インストールなし。ブラウザだけで39本を動かす手順。まずここから。",
   "ch01.html": "モデルファイルも写真も読み込まず、実行した瞬間に座標と模様を計算で作る。",
   "ch02.html": "Math.random() を使わない理由。種を渡すと毎回同じ結果になる乱数を自分で書く。",
   "ch03.html": "となり合う値がなめらかにつながる乱数。重ねると焼きムラや生地の肌理になる。",
@@ -198,12 +199,17 @@ const LEDE = {
   "ch14.html": "透けを切ると、白玉は石膏に、赤身は消しゴムになる。厚みを持たせる。",
   "ch15.html": "茶碗一杯は約1400粒。説得力を決めるのは粒間の暗がりで、SSAOでは出ない。",
   "ch16.html": "団子は真球では積めない。潰した体積の行き先と、接触の縁の土手。",
-  "ch17.html": "トーストとエッグトーストは同じプログラム。色を変えただけでは別物にならない。"
+  "ch17.html": "トーストとエッグトーストは同じプログラム。色を変えただけでは別物にならない。",
+  "ch18.html": "パン粉は寝ながら重なった薄い板、天ぷらは泡の花。揚げ色の向きは衣によって逆になる。",
+  "ch19.html": "麺を手で並べると籠になる。曲がりぐせのある歩行で描き、押し合わせて落ち着かせる。",
+  "ch20.html": "汁は透明なメッシュにしない。沈んだ物の深さを液面に焼く。カレーは水ではない。",
+  "ch21.html": "物理に任せるか、高さ場で解くか、式で解くか。盛り付けの解き方は料理が決める。"
 };
 
 function indexPage() {
   const part1 = chapters.filter((p) => Number(p.no) <= 11);
-  const part2 = chapters.filter((p) => Number(p.no) >= 12);
+  const part2 = chapters.filter((p) => Number(p.no) >= 12 && Number(p.no) <= 17);
+  const part3 = chapters.filter((p) => Number(p.no) >= 18);
   const cards = (list) =>
     list.map((p) => hubCard(Object.assign({}, p, { lede: LEDE[p.file] || p.sub }))).join("\n");
 
@@ -214,7 +220,7 @@ function indexPage() {
       <p class="eyebrow">Babylon.js / procedural food</p>
       <h1>3Dの料理は、<br><span class="accent">数式から焼ける</span>。</h1>
       <p class="lede">
-        このサイトで扱う14本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        このサイトで扱う39本のプログラムは、3Dモデルも写真も1枚も読み込みません。
         点の座標を計算で並べ、焼き色をその場で描き、たれの濃さを厚みから解く。
         絵を描く技術ではなく、形と質感を組み立てる技術です。
         中学・高校の数学で追えるところから順に見ていきます。
@@ -254,7 +260,7 @@ function indexPage() {
     <ul class="roadmap">
       <li><span class="rn">A</span><span class="rt"><b>とにかく動かしたい人</b><span><a href="zukan.html">図鑑</a>の写真を押す → その料理がこのサイトの中で動きます</span></span></li>
       <li><span class="rn">B</span><span class="rt"><b>順番に理解したい人</b><span>01 → 02 → 03 …… と上から。04章（かたち）と05章（面と法線）がこの教材の背骨です。</span></span></li>
-      <li><span class="rn">C</span><span class="rt"><b>料理として面白い所だけ見たい人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch17.html">17</a>）へ。焼き色・たれ・透け・粒・潰れ。野菜には出てこない5つです。</span></span></li>
+      <li><span class="rn">C</span><span class="rt"><b>料理として面白い所だけ見たい人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch17.html">17</a>）へ。焼き色・たれ・透け・粒・潰れ。野菜には出てこない5つです。続く第III部（<a href="ch18.html">18</a>〜<a href="ch21.html">21</a>）は衣・麺・汁・盛り付け。</span></span></li>
       <li><span class="rn">D</span><span class="rt"><b>コードを読みたい人</b><span><a href="view.html">ソース</a>でファイルを選ぶ → 対応する章に戻る</span></span></li>
     </ul>
     <div class="note">
@@ -311,25 +317,48 @@ ${cards(part2)}
   </div>
 </section>
 
+<section class="chapter" id="chapters3" style="--ch:var(--p-dashi)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">第III部<small style="opacity:.7">PART III</small></div>
+    <div>
+      <h2>定食屋の一皿をつくる（18〜21）</h2>
+      <p class="sub">揚げる・茹でる・煮る・盛る。25本が増えて出てきた4つの難所</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      サンプルは14本から39本に増えました。増えたのは、とんかつ・天ぷら・うどん・ラーメン・スパゲッティ・
+      カレー・肉じゃが・おでんのような、定食屋や麺屋に並ぶ料理です。
+      第II部の考え方はそのまま使えますが、<b>衣の作り方、何十本もの麺の絡み方、汁に沈んだ具の見え方、
+      鍋いっぱいに詰める盛り付け</b>の4つは、新しい道具が要りました。
+    </p>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+${cards(part3)}
+    </div>
+  </div>
+</section>
+
 <section class="chapter" id="refs" style="--ch:var(--p-karaage)">
   <div class="chapter-head">
     <div class="chnum" style="font-size:15px">資料<small style="opacity:.7">REFERENCE</small></div>
     <div>
-      <h2>14本を引く</h2>
+      <h2>39本を引く</h2>
       <p class="sub">ファイルから逆に読みたいとき</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
     <div class="hub">
       <a class="hubcard" href="zukan.html" style="--ch:var(--p-koge)">
-        <span class="no">14<span style="opacity:.55;margin-left:8px">FILES</span></span>
+        <span class="no">39<span style="opacity:.55;margin-left:8px">FILES</span></span>
         <h3>どのファイルで、何が学べるか</h3>
-        <p>14本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
+        <p>39本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
       </a>
       <a class="hubcard" href="view.html" style="--ch:var(--p-karaage)">
         <span class="no">SRC<span style="opacity:.55;margin-left:8px">SOURCE</span></span>
         <h3>サンプルのソースを読む</h3>
-        <p>14本の .js をその場で表示。コピーすれば、そのまま Playground に貼れます。</p>
+        <p>39本の .js をその場で表示。コピーすれば、そのまま Playground に貼れます。</p>
       </a>
       <a class="hubcard" href="terms.html" style="--ch:var(--p-choco)">
         <span class="no">用語<span style="opacity:.55;margin-left:8px">GLOSSARY</span></span>
@@ -345,7 +374,7 @@ ${cards(part2)}
 
   return shell({
     title: SITE + " — コードで料理をつくる技術ノート",
-    desc: "Babylon.js で料理を手続き的に生成する14本のサンプルを、中学生・高校生向けに解説する学習ポータル",
+    desc: "Babylon.js で料理を手続き的に生成する39本のサンプルを、中学生・高校生向けに解説する学習ポータル",
     current: "index.html",
     main: main
   });
@@ -360,10 +389,10 @@ function zukanPage() {
   <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>図鑑</p>
 <section class="chapter" id="zukan" style="--ch:var(--p-koge)">
   <div class="chapter-head">
-    <div class="chnum">14<small>FILES</small></div>
+    <div class="chnum">39<small>FILES</small></div>
     <div>
       <h2>どのファイルで、何が学べるか</h2>
-      <p class="sub">14本それぞれに、そこでしか出てこない技術がある</p>
+      <p class="sub">39本それぞれに、そこでしか出てこない技術がある</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -379,14 +408,14 @@ function zukanPage() {
   <div class="catalog" id="catalog"></div>
 </section>
   <div class="pager">
-    <a class="prev" href="ch17.html"><span class="dir">← まえの章</span><span class="ttl">17 「似ているのに別物」を作り分ける</span></a>
+    <a class="prev" href="ch21.html"><span class="dir">← まえの章</span><span class="ttl">21 盛り付けは、料理ごとに解き方を選ぶ</span></a>
     <a class="next" href="view.html"><span class="dir">つぎへ →</span><span class="ttl">SRC サンプルのソースを読む</span></a>
   </div>
 </div>
 </main>`;
   return shell({
     title: "どのファイルで、何が学べるか — " + SITE,
-    desc: "14本の一覧と、それぞれの難所",
+    desc: "39本の一覧と、それぞれの難所",
     current: "zukan.html",
     // tools/shoot.js が書き出したサムネイル一覧。無ければカードだけ出る
     head: '<script src="assets/thumbs/thumbs.js" defer></script>\n',
@@ -403,7 +432,7 @@ function viewPage() {
     <div class="chnum" style="font-size:13px">src<small style="opacity:.7">SOURCE</small></div>
     <div>
       <h2>サンプルのソースを読む</h2>
-      <p class="sub">14本の .js を、そのまま表示します</p>
+      <p class="sub">39本の .js を、そのまま表示します</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -446,8 +475,10 @@ function viewPage() {
         <tr><td>3. Mesh utils</td><td>巻き順の判定・法線の溶接・掃引</td><td><a href="ch05.html">05 面と法線</a> / <a href="ch10.html">10 曲がり</a></td></tr>
         <tr><td>4. Fields / Section / Shape</td><td>断面のテーブル、外形、焼き色の場、垂れの輪郭</td><td><a href="ch04.html">04 かたち</a> / <a href="ch12.html">12 焼き色</a></td></tr>
         <tr><td>5. TextureLab</td><td>アルベド・ORM・法線・厚みの生成</td><td><a href="ch06.html">06 テクスチャ</a> / <a href="ch13.html">13 たれ</a> / <a href="ch14.html">14 透け</a></td></tr>
-        <tr><td>6〜7. 本体 / トッピング</td><td>その料理そのものの組み立てと、上に乗るもの</td><td><a href="ch09.html">09 部品</a> / <a href="ch15.html">15 粒</a></td></tr>
-        <tr><td>7〜8. 皿 / 板 / トレイ</td><td>器と、その上への配置</td><td><a href="ch08.html">08 物理</a> / <a href="ch16.html">16 潰れ</a></td></tr>
+        <tr><td>6〜7. 本体 / トッピング</td><td>その料理そのものの組み立てと、上に乗るもの</td><td><a href="ch09.html">09 部品</a> / <a href="ch15.html">15 粒</a> / <a href="ch18.html">18 衣</a></td></tr>
+        <tr><td>Strands / Relax</td><td>麺の芯線と、押し合いの緩和（麺のファイルだけ）</td><td><a href="ch19.html">19 麺</a></td></tr>
+        <tr><td>Submerge / Broth / Roux / Glaze</td><td>液面の下の最上点、汁面、ルウ、煮汁の膜（汁物のファイルだけ）</td><td><a href="ch20.html">20 汁</a></td></tr>
+        <tr><td>7〜8. 皿 / 板 / トレイ / 盛り付け</td><td>器と、その上への配置</td><td><a href="ch08.html">08 物理</a> / <a href="ch16.html">16 潰れ</a> / <a href="ch21.html">21 盛る</a></td></tr>
         <tr><td>8〜9. Scene</td><td>光・影・露出・被写界深度</td><td><a href="ch11.html">11 光</a></td></tr>
         <tr><td>9〜10. GUI</td><td>右下のスライダー</td><td>—</td></tr>
       </table>
@@ -462,12 +493,12 @@ function viewPage() {
   </div>
 </section>
   <div class="pager">
-    <a class="prev" href="zukan.html"><span class="dir">← まえへ</span><span class="ttl">14 どのファイルで、何が学べるか</span></a>
+    <a class="prev" href="zukan.html"><span class="dir">← まえへ</span><span class="ttl">39 どのファイルで、何が学べるか</span></a>
     <a class="next" href="terms.html"><span class="dir">つぎへ →</span><span class="ttl">用語 コードに出てくる言葉</span></a>
   </div>
 </div>
 </main>`;
-  return shell({ title: "サンプルのソースを読む — " + SITE, desc: "14本の .js を行番号つきで表示します", current: "view.html", main: main });
+  return shell({ title: "サンプルのソースを読む — " + SITE, desc: "39本の .js を行番号つきで表示します", current: "view.html", main: main });
 }
 
 /* 用語。左が語、右が意味。labs.js が絞り込みを付ける */
@@ -524,7 +555,18 @@ const TERMS = [
   ["name と id", "メッシュにつく2つの名前。<code>new BABYLON.Mesh(name)</code> は id にも同じ値を入れるので、名前を変えるだけでは id が残る（<a href=\"ch09.html\">09章</a>）。"],
   ["layerMask", "カメラとメッシュに付ける印。合わない組み合わせは描かれない。GUI を分けるのに使う。"],
   ["ギズモ", "Inspector で選んだ物に出る、動かすための矢印や輪。"],
-  ["ポストプロセス", "描き終えた絵にあとから掛ける処理。Bloom（にじみ）や被写界深度（ぼけ）など（<a href=\"ch11.html\">11章</a>）。"]
+  ["ポストプロセス", "描き終えた絵にあとから掛ける処理。Bloom（にじみ）や被写界深度（ぼけ）など（<a href=\"ch11.html\">11章</a>）。"],
+  ["照明比", "いちばん明るい面と影の側の明るさの比。高いと白い料理が灰色に見える（<a href=\"ch11.html\">11章</a>）。"],
+  ["パン粉 / 衣", "揚げ物の表面の層。パン粉は薄い板、天ぷらの衣は泡と花として作る（<a href=\"ch18.html\">18章</a>）。"],
+  ["ウォーカー", "1歩ずつ向きを変えながら進んで線を描く仕組み。麺の芯線を作る（<a href=\"ch19.html\">19章</a>）。"],
+  ["OU 過程", "基準の値に引き戻されながら揺れる乱数の列。麺の曲率を「持続」させるのに使う。"],
+  ["位置ベースの緩和 / PBD", "速度や力を計算せず、点の位置を条件（長さ・反発など）を満たす位置へ少しずつ直す方法（<a href=\"ch19.html\">19章</a>）。"],
+  ["芯", "麺の盛りの下の層を塞ぐ暗い形。見えない所を管で埋めずに済ませる。"],
+  ["最上点バッファ", "真上から見て、各マスでいちばん高い面の高さと色を残した格子。汁の色と盛り付けに使う（<a href=\"ch20.html\">20章</a>）。"],
+  ["消散係数 σ", "液体の中を 1cm 進むあいだに光がどれだけ減るか。RGB で別々に持つ。単位は 1/cm（<a href=\"ch20.html\">20章</a>）。"],
+  ["降伏応力 / ビンガム流体", "ある強さより弱い力では流れない性質と、それを持つ液体。カレーのルウが水平にならない理由（<a href=\"ch20.html\">20章</a>）。"],
+  ["高さ場", "平面の各点に高さを1つずつ持たせた格子。上から見た最上点しか持たない（<a href=\"ch21.html\">21章</a>）。"],
+  ["代理形状", "当たり判定だけに使う単純な形（円柱・箱）。見た目のメッシュはその子として吊るす（<a href=\"ch21.html\">21章</a>）。"]
 ];
 
 function termsPage() {

@@ -14,7 +14,7 @@
      4. ミニレンダラ  … 画家のアルゴリズム + 簡易PBR
      5. キャンバスの下ごしらえ
      6. 料理のプリセット（断面と材質）
-     HERO / 02〜17 の実験 / 図鑑 / ソースビューア / 用語集の絞り込み
+     HERO / 02〜21 の実験 / 図鑑 / ソースビューア / 用語集の絞り込み
    ======================================================================= */
 (function () {
 "use strict";
@@ -2029,25 +2029,729 @@ function foldField(u, v, seed) {
 })();
 
 /* ======================================================================
+   18 — 衣（等方ノイズの粒 / パン粉の薄い板 / 天ぷらの花）
+   高さ場を1枚作り、色・粗さ・法線をすべてそこから引く（とんかつ.js と同じ）
+   ====================================================================== */
+(function () {
+    var cv = $("#coatCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var W = 300, H = 168, pn = pixelPanel(W, H);
+    var mode = "panko", fry = 0.55, amt = 0.6, corr = true, mark;
+    var out = $("#coatOut");
+    var hf = new Float32Array(W * H);   // 高さ
+    var th = new Float32Array(W * H);   // 天ぷらの衣の厚み（th0 = 0.5）
+
+    // とんかつ.js C_PALE … C_BURNT（くぼみ → 出っ張った破片の先）
+    var PANKO = [[0.945, 0.855, 0.660], [0.905, 0.720, 0.435], [0.830, 0.565, 0.265],
+        [0.670, 0.385, 0.145], [0.455, 0.230, 0.085]];
+    // 天ぷら.js KOROMO_DEEP / BASE / PALE / BURN
+    var K_DEEP = [0.925, 0.700, 0.335], K_BASE = [0.995, 0.805, 0.415];
+    var K_PALE = [1.000, 0.913, 0.660], K_BURN = [0.790, 0.480, 0.160];
+
+    function ramp(list, t) {
+        var x = clamp(t, 0, 1) * (list.length - 1);
+        var i = Math.min(list.length - 2, Math.floor(x));
+        return mix3(list[i], list[i + 1], x - i);
+    }
+
+    function tempuraField() {
+        var R = new Rng(1808), x, y, i;
+        for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+            i = y * W + x;
+            // 殻の厚みは2枚のノイズで場所ごとに変える（koromoShell）
+            var l1 = Noise.fbm(x * 0.022, y * 0.022, 31, 3) - 0.5;
+            var l2 = Noise.fbm(x * 0.07, y * 0.07, 57, 2) - 0.5;
+            th[i] = clamp(0.5 * (1 + l1 * 1.15 + l2 * 0.85), 0, 1);
+            hf[i] = th[i] * 0.55;
+        }
+        // 花。厚い所にだけ、泡（22%）と薄い花びらを生やす
+        var n = Math.round(amt * 260);
+        for (var k = 0; k < n; k++) {
+            var cx = R.next() * W, cy = R.next() * H;
+            var isBlob = R.next() < 0.22;
+            var r = isBlob ? R.range(2.5, 5) : R.range(4, 9);
+            var ang = R.next() * Math.PI, el = isBlob ? 1 : R.range(0.35, 0.6);
+            var hgt = isBlob ? r * 0.09 : R.range(0.10, 0.22);
+            if (th[(cy | 0) * W + (cx | 0)] < 0.5 * 0.55) continue;
+            var ca = Math.cos(ang), sa = Math.sin(ang);
+            var y0 = Math.max(0, (cy - r - 1) | 0), y1 = Math.min(H, cy + r + 2);
+            var x0 = Math.max(0, (cx - r - 1) | 0), x1 = Math.min(W, cx + r + 2);
+            for (y = y0; y < y1; y++) for (x = x0; x < x1; x++) {
+                var dx = x - cx, dy = y - cy;
+                var u = (dx * ca + dy * sa) / r, v = (-dx * sa + dy * ca) / (r * el);
+                var d = u * u + v * v;
+                if (d >= 1) continue;
+                i = y * W + x;
+                // 泡は丸いドーム、花びらは上面が平らで縁が立つ
+                var add = isBlob ? Math.sqrt(1 - d) * hgt : hgt * smooth(1, 0.7, d);
+                var nh = th[i] * 0.55 + add + 0.08;
+                if (nh > hf[i]) { hf[i] = nh; th[i] = Math.max(th[i], 0.75 + add); }
+            }
+        }
+    }
+
+    function buildField() {
+        if (mode === "tempura") { tempuraField(); return; }
+        var lo = 0.500 + (0.6 - amt) * 0.10;
+        for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+            var i = y * W + x;
+            if (mode === "iso") {
+                // 幅の広いしきい値 → 縁がなだらかな丸い粒
+                var g = smooth(lo - 0.10, lo + 0.18, Noise.fbm(x * 0.07, y * 0.07, 11, 3));
+                hf[i] = g * 0.78 + Noise.fbm(x * 0.3, y * 0.3, 23, 2) * 0.12;
+                continue;
+            }
+            // 軸をつぶしたノイズ3枚の max。しきい値の幅は 0.052（crustHeight）
+            var s1 = Noise.fbm(x * 0.035, y * 0.15, 11, 2);
+            var s2 = Noise.fbm(x * 0.155, y * 0.039, 51, 2);
+            var s3 = Noise.fbm((x + y) * 0.092, (x - y) * 0.032 + 5, 97, 2);
+            var sh = Math.max(smooth(lo, lo + 0.052, s1),
+                Math.max(smooth(lo, lo + 0.052, s2), smooth(lo, lo + 0.052, s3)));
+            // 一回り小さい破片。輪郭をぎざぎざにする層
+            var t1 = Noise.fbm(x * 0.088, y * 0.34, 131, 2);
+            var t2 = Noise.fbm(x * 0.35, y * 0.096, 173, 2);
+            var sh2 = Math.max(smooth(0.505, 0.575, t1), smooth(0.505, 0.575, t2));
+            var bl = Noise.fbm(x * 0.021, y * 0.021, 7, 3);     // 揚げ膨れ
+            var fi = Noise.fbm(x * 0.46, y * 0.46, 23, 2);
+            hf[i] = clamp(sh * 0.54 + sh2 * 0.24 + bl * 0.13 + fi * 0.09, 0, 1);
+        }
+    }
+
+    function draw() {
+        buildField();
+        var L = [-0.42, -0.50, 0.76], ll = Math.hypot(L[0], L[1], L[2]);
+        var lx = L[0] / ll, ly = L[1] / ll, lz = L[2] / ll;
+        var hx = lx, hy = ly, hz = lz + 1, hl = Math.hypot(hx, hy, hz);
+        hx /= hl; hy /= hl; hz /= hl;
+        var relief = mode === "tempura" ? 5.0 : 3.2;
+        for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+            var i = y * W + x, h = hf[i];
+            // 高さから法線（y は画面の下向き）
+            var nx = ((x > 0 ? hf[i - 1] : h) - (x < W - 1 ? hf[i + 1] : h)) * relief;
+            var ny = ((y > 0 ? hf[i - W] : h) - (y < H - 1 ? hf[i + W] : h)) * relief;
+            var nz = 1, nl = Math.hypot(nx, ny, nz);
+            nx /= nl; ny /= nl; nz /= nl;
+
+            // 揚げ色。形から決めるか、形と無関係なノイズから決めるか
+            var free = Noise.fbm(x * 0.03 + 40, y * 0.03, 77, 3);
+            var col, rough;
+            if (mode === "tempura") {
+                // 衣が厚いほど白い（DEEP → BASE → PALE）
+                var tt = corr ? th[i] : free;
+                var ct = clamp(0.38 + (tt / 0.5 - 0.85) * 0.78, 0, 1);
+                col = ct > 0.5 ? mix3(K_BASE, K_PALE, (ct - 0.5) * 2) : mix3(K_DEEP, K_BASE, ct * 2);
+                col = mix3(col, K_BURN, clamp((fry - 0.35) * 1.3 * (1 - ct), 0, 0.8));
+                rough = clamp(0.46 + 0.18 * h, 0.18, 0.95);
+            } else {
+                // 出っ張った破片の先ほど濃い
+                var g = clamp(((corr ? h : free) - 0.12) / 0.8, 0, 1);
+                col = ramp(PANKO, g * (0.35 + fry * 0.85));
+                // 揚げたパン粉は 0.6〜0.85 のつや消し。油の溜まるくぼみだけ少し滑らか
+                rough = mode === "iso" ? 0.5 : (0.58 + 0.29 * smooth(0.15, 0.85, h)) * (h < 0.3 ? 0.85 : 1);
+            }
+
+            var ndl = Math.max(0, nx * lx + ny * ly + nz * lz);
+            var ndh = Math.max(0, nx * hx + ny * hy + nz * hz);
+            var spec = Math.pow(ndh, mix(5, 400, (1 - rough) * (1 - rough))) * (0.04 + 0.8 * (1 - rough));
+            var ao = mode === "tempura" ? 0.75 + 0.25 * clamp(h / 0.5, 0, 1) : 0.6 + 0.4 * clamp(h / 0.8, 0, 1);
+            var lit = (0.28 + 0.9 * ndl) * ao;
+            pn.set(i,
+                tone(srgbToLin(col[0]) * lit + spec),
+                tone(srgbToLin(col[1]) * lit + spec),
+                tone(srgbToLin(col[2]) * lit + spec));
+        }
+        pn.flush();
+        ctx.clearRect(0, 0, c.W, c.H);
+        ctx.drawImage(pn.cv, 20, 12, 600, 336);
+
+        if (!out) return;
+        var msg;
+        if (mode === "iso") msg = "丸い粒が並んでいます。<b>から揚げか、岩肌</b>に見えます";
+        else if (!corr) msg = "<b style='color:#8F1619'>形と無関係な揚げ色。柄の付いた布に見えます</b>";
+        else if (mode === "panko") msg = "寝た薄い板が重なり、破片の先だけ濃い：<b>パン粉</b>";
+        else msg = amt < 0.08 ? "花が無いので、<b>発泡スチロール</b>に見えます"
+            : "厚い所と花の先が白く飛ぶ：<b>天ぷら</b>";
+        out.innerHTML = (mode === "panko" ? "向きの違う破片 3 方向 / しきい値の幅 0.052<br>"
+            : mode === "iso" ? "等方ノイズ / しきい値の幅 0.28<br>" : "殻の厚み 2 層のノイズ + 花<br>") + msg;
+    }
+    mark = lazyLoop(cv, draw);
+    chipGroup("#coatMode", function (v) { mode = v; mark(); });
+    slider("#coatFry", "#coatFryV", f2, function (n) { fry = n; mark(); });
+    slider("#coatAmt", "#coatAmtV", f2, function (n) { amt = n; mark(); });
+    toggle("#coatCorr", function (v) { corr = v; mark(); });
+})();
+
+/* ======================================================================
+   19 — 麺（手で並べる / ランダムウォーク / 曲率を持続させる）+ 位置ベースの緩和
+   真上から見た丼。点は (x, y, z) を持ち、z は高さ（大きいほど上）
+   ====================================================================== */
+(function () {
+    var cv = $("#menCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var mode = "walk", count = 16, relaxN = 40, core = true, mark;
+    var out = $("#menOut");
+    var CX = 320, CY = 180, BR = 168;   // 丼の内側（内径 ≒ 20cm を 336px とした尺度）
+    var DS = 6, RAD = 4.2;              // 点の間隔 / 麺の半径（px）
+    var strands = [], deep = 0, zTop = 1;
+    // うどん.js MEN_PALE / MEN_DEEP
+    var M_PALE = [0.966, 0.945, 0.873], M_DEEP = [0.840, 0.777, 0.626];
+
+    function inside(x, y, m) { return Math.hypot(x - CX, y - CY) < BR - m; }
+    // 丼の底。縁に近いほど上がる
+    function floorZ(x, y) {
+        var r = Math.hypot(x - CX, y - CY) / BR;
+        return RAD + Math.max(0, r - 0.55) * 46;
+    }
+
+    function makeStrand(R, k, n) {
+        var N = Math.round((420 + R.next() * 200) / DS), p = [], i;
+        var z0 = RAD + (k / n) * RAD * 2 * 3.2;   // 下の層から順に積む
+        if (mode === "hand") {
+            // 同じ半径の輪を等間隔に並べ、上下を規則正しく入れ替える
+            var r0 = 28 + (BR - 50) * (k + 0.5) / n, ph = k * 1.7;
+            for (i = 0; i < N; i++) {
+                var a = ph + i * DS / r0;
+                var rr = r0 + 7 * Math.sin(a * 6 + k);
+                p.push({ x: CX + Math.cos(a) * rr, y: CY + Math.sin(a) * rr,
+                    z: RAD + RAD * 1.2 * (Math.sin(a * 6 + k * Math.PI) * 0.5 + 0.5) });
+            }
+            return p;
+        }
+        var r1 = (BR - 30) * Math.sqrt(R.next()), a1 = R.next() * TAU;
+        var x = CX + Math.cos(a1) * r1, y = CY + Math.sin(a1) * r1, hd = R.next() * TAU;
+        // 基準曲率は半径 1.6〜3.4cm の弧
+        var kap0 = 1 / R.range(27, 57), sign = R.next() < 0.5 ? -1 : 1, kap = kap0 * sign;
+        for (i = 0; i < N; i++) {
+            p.push({ x: x, y: y, z: z0 });
+            if (mode === "rand") {
+                hd += R.gauss(0, 0.55);                       // 向きに記憶が無い
+            } else {
+                if (R.next() < 0.012) sign = -sign;           // たまに反転して S 字
+                kap += (kap0 * sign - kap) * 0.08 + R.gauss(0, 0.004);
+                hd += kap * DS;                               // 曲率を積分して向きにする
+            }
+            var nx = x + Math.cos(hd) * DS, ny = y + Math.sin(hd) * DS;
+            if (!inside(nx, ny, RAD + 6)) {
+                // 内壁にぶつかったら内側へ巻き込む
+                var toC = Math.atan2(CY - y, CX - x);
+                hd += Math.atan2(Math.sin(toC - hd), Math.cos(toC - hd)) * 0.35;
+                nx = x + Math.cos(hd) * DS; ny = y + Math.sin(hd) * DS;
+                if (!inside(nx, ny, RAD + 2)) {
+                    hd = toC + (R.next() - 0.5);
+                    nx = x + Math.cos(hd) * DS; ny = y + Math.sin(hd) * DS;
+                }
+            }
+            x = nx; y = ny;
+        }
+        return p;
+    }
+
+    function dist3(a, b) { return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z); }
+
+    // 長さ・曲げ・反発・底と内壁の4つを、少しずつ満たす
+    function relax(iters) {
+        var pts = [], s, i, j;
+        for (s = 0; s < strands.length; s++) for (i = 0; i < strands[s].length; i++) {
+            strands[s][i].s = s; strands[s][i].i = i; pts.push(strands[s][i]);
+        }
+        var cell = RAD * 2.4, gw = Math.ceil(640 / cell), dmin = RAD * 2 * 0.92;
+        for (var it = 0; it < iters; it++) {
+            for (i = 0; i < pts.length; i++) pts[i].z -= 0.35;     // 弱い重力（準静的に落とす）
+            // 反発。近傍は格子で探す
+            var grid = new Map();
+            for (i = 0; i < pts.length; i++) {
+                var key = Math.floor(pts[i].x / cell) + Math.floor(pts[i].y / cell) * gw;
+                var b = grid.get(key); if (!b) grid.set(key, b = []); b.push(pts[i]);
+            }
+            for (i = 0; i < pts.length; i++) {
+                var p = pts[i], gx = Math.floor(p.x / cell), gy = Math.floor(p.y / cell);
+                for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) {
+                    var lst = grid.get(gx + ox + (gy + oy) * gw); if (!lst) continue;
+                    for (j = 0; j < lst.length; j++) {
+                        var q = lst[j];
+                        if (q === p || (q.s === p.s && Math.abs(q.i - p.i) < 4)) continue;
+                        if (q.s < p.s || (q.s === p.s && q.i < p.i)) continue;   // 同じ組を2度見ない
+                        var dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z;
+                        var d = Math.hypot(dx, dy, dz);
+                        if (d >= dmin) continue;
+                        // ほぼ同じ高さなら、上の層の麺が上を通る
+                        if (Math.abs(dz) < 0.3) dz = (q.s > p.s ? 0.3 : -0.3);
+                        d = Math.max(1e-4, Math.hypot(dx, dy, dz));
+                        var k = (dmin - d) / d * 0.5;
+                        p.x -= dx * k * 0.5; p.y -= dy * k * 0.5; p.z -= dz * k;
+                        q.x += dx * k * 0.5; q.y += dy * k * 0.5; q.z += dz * k;
+                    }
+                }
+            }
+            for (s = 0; s < strands.length; s++) {
+                var st = strands[s];
+                // 長さ（伸びない）
+                for (i = 0; i < st.length - 1; i++) pull(st[i], st[i + 1], DS, 0.5);
+                // 曲げ（1つおきの点の距離をほぼ保つ）
+                for (i = 0; i < st.length - 2; i++) pull(st[i], st[i + 2], 2 * DS * 0.985, 0.12);
+            }
+            // 底と内壁
+            for (i = 0; i < pts.length; i++) {
+                var pp = pts[i], fz = floorZ(pp.x, pp.y);
+                if (pp.z < fz) pp.z = fz;
+                var rx = pp.x - CX, ry = pp.y - CY, rr = Math.hypot(rx, ry), lim = BR - RAD - 2;
+                if (rr > lim) { pp.x = CX + rx / rr * lim; pp.y = CY + ry / rr * lim; }
+            }
+        }
+    }
+    function pull(a, b, len, w) {
+        var dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z, d = Math.hypot(dx, dy, dz) || 1e-4;
+        var k = (d - len) / d * 0.5 * w;
+        a.x += dx * k; a.y += dy * k; a.z += dz * k;
+        b.x -= dx * k; b.y -= dy * k; b.z -= dz * k;
+    }
+
+    function rebuild() {
+        var R = new Rng(1919);
+        strands = [];
+        for (var k = 0; k < count; k++) strands.push(makeStrand(R, k, count));
+        relax(relaxN);
+        // 直径の4割以上食い込んだまま残っている組を数える
+        deep = 0; zTop = 1;
+        var all = [];
+        strands.forEach(function (st) { st.forEach(function (p) { all.push(p); zTop = Math.max(zTop, p.z); }); });
+        for (var i = 0; i < all.length; i += 2) for (var j = i + 2; j < all.length; j += 2) {
+            var a = all[i], b = all[j];
+            if (a.s === b.s && Math.abs(a.i - b.i) < 6) continue;
+            if (Math.abs(a.x - b.x) > RAD * 2 || Math.abs(a.y - b.y) > RAD * 2) continue;
+            if (dist3(a, b) < RAD * 2 * 0.6) deep++;
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, c.W, c.H);
+        // 丼の口縁と見込み
+        ctx.beginPath(); ctx.arc(CX, CY, BR + 12, 0, TAU);
+        ctx.fillStyle = "#E6DFD1"; ctx.fill();
+        ctx.beginPath(); ctx.arc(CX, CY, BR, 0, TAU);
+        if (core) {
+            // 暗い芯。すき間から覗くのはこの暗がり
+            var g = ctx.createRadialGradient(CX, CY, 10, CX, CY, BR);
+            g.addColorStop(0, "#2E2116"); g.addColorStop(1, "#4A3826");
+            ctx.fillStyle = g;
+        } else {
+            ctx.fillStyle = "#F4F0E8";
+        }
+        ctx.fill();
+
+        // 線分を高さ順に描く（低いものから）
+        var segs = [];
+        strands.forEach(function (st) {
+            for (var i = 0; i < st.length - 1; i++) segs.push([st[i], st[i + 1], (st[i].z + st[i + 1].z) * 0.5]);
+        });
+        segs.sort(function (a, b) { return a[2] - b[2]; });
+        ctx.lineJoin = "round";
+        var low = M_DEEP.map(function (v) { return v * 0.62; });
+        function rgb(cc, m) {
+            return "rgb(" + Math.round(cc[0] * m * 255) + "," + Math.round(cc[1] * m * 255) + "," + Math.round(cc[2] * m * 255) + ")";
+        }
+        for (var k = 0; k < segs.length; k++) {
+            var a = segs[k][0], b = segs[k][1];
+            var t = clamp(segs[k][2] / zTop, 0, 1);
+            var col = mix3(low, M_PALE, 0.25 + 0.75 * t);   // 高い所ほど明るい
+            // 輪郭は端を伸ばさない（同じ麺の前の線分に重ならないように）
+            ctx.lineCap = "butt";
+            ctx.strokeStyle = rgb(col, 0.55); ctx.lineWidth = RAD * 2 + 1.6;
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+            ctx.lineCap = "round";
+            ctx.strokeStyle = rgb(col, 1); ctx.lineWidth = RAD * 2 - 0.4;
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+            // 稜線に沿って長く走る照り
+            ctx.lineCap = "butt";
+            ctx.strokeStyle = "rgba(255,255,250," + (0.35 + 0.4 * t).toFixed(2) + ")"; ctx.lineWidth = 1.3;
+            ctx.beginPath(); ctx.moveTo(a.x - 1.1, a.y - 1.1); ctx.lineTo(b.x - 1.1, b.y - 1.1); ctx.stroke();
+        }
+
+        if (!out) return;
+        var msg;
+        if (mode === "hand") msg = "<b>編んだ籠</b>に見えます（同じ半径の輪が等間隔に並び、上下が規則正しく入れ替わる）";
+        else if (mode === "rand") msg = "<b>毛糸くず</b>に見えます（向きに記憶が無いので、細かく折れる）";
+        else if (relaxN < 12) msg = "形は麺ですが、交差した所で<b style='color:#8F1619'>突き抜けたまま</b>です";
+        else msg = "交差の上下が決まり、下の麺が谷へ沈みました：<b>麺</b>";
+        out.innerHTML = count + " 本 / 緩和 " + relaxN + " 回<br>深い食い込み（直径の4割以上）" +
+            "<b>" + deep + "</b> か所<br>" + msg;
+    }
+
+    mark = lazyLoop(cv, draw);
+    function redo() { rebuild(); mark(); }
+    chipGroup("#menMode", function (v) { mode = v; redo(); });
+    slider("#menCount", "#menCountV", function (n) { return String(n | 0); }, function (n) { count = n | 0; redo(); });
+    slider("#menRelax", "#menRelaxV", function (n) { return String(n | 0); }, function (n) { relaxN = n | 0; redo(); });
+    toggle("#menCore", function (v) { core = v; mark(); });
+})();
+
+/* ======================================================================
+   20 — 汁（出汁 / 煮汁の膜 / ルウ）
+   下は器の断面、上の帯は同じ場所を真上から見た色（最上点バッファの考え方）
+   どのモードも c = 下の色 × exp(−σ × 2d) ＋ 濁り。違うのは σ と液面の形
+   ====================================================================== */
+(function () {
+    var cv = $("#liqCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var W = 320, H = 180, pn = pixelPanel(W, H);
+    var mode = "roux", amt = 0.55, tau = 16, sig = 1, mark;
+    var out = $("#liqOut"), tauEl = $("#liqTau");
+    var X0 = -12, X1 = 12, VS = 20, BASE = 168, STRIP0 = 6, STRIP1 = 26;   // 横 24cm、縦は 20px/cm
+    var RHO = 1050, GRAV = 9.81;                                            // カレー.js と同じ物性値
+
+    // 各サンプルの CONFIG から（σ は 1/cm）
+    var LIQ = {
+        dashi: { sigma: [0.200, 0.420, 0.850], haze: [0.560, 0.320, 0.110], hazeK: 0.40,
+            film: 0.030, pool: 0.120, drain: 0.80 },                                     // おでん.js kanto
+        glaze: { sigma: [0.740, 1.390, 2.100], haze: [0.365, 0.196, 0.072], hazeK: 0.115,
+            film: 0.038, pool: 0.190, drain: 1.35 },                                     // 肉じゃが.js teiban
+        roux: { sigma: [6.0, 6.0, 6.0], haze: [0.455, 0.250, 0.062], hazeK: 1.0,
+            film: 0.135, pool: 0.95 }                                                    // カレー.js pork
+    };
+    var C_PLATE = [0.880, 0.870, 0.845], C_RICE = [0.930, 0.912, 0.862];
+    var C_POTATO = [0.982, 0.826, 0.315], C_CARROT = [0.957, 0.425, 0.045];          // 肉じゃが.js
+    var C_BG = [0.985, 0.975, 0.955];
+
+    function cmX(px) { return X0 + (px + 0.5) / W * (X1 - X0); }
+    function plateTop(x) { var a = Math.abs(x); return a <= 8.5 ? 0 : Math.min(3, 3 * Math.pow((a - 8.5) / 3.5, 2)); }
+    function ell(x, cx, hw, hh, cy) {
+        var u = (x - cx) / hw; if (Math.abs(u) >= 1) return null;
+        var s = Math.sqrt(1 - u * u) * hh; return [cy - s, cy + s];
+    }
+    // 左から 白い山 / じゃがいも / にんじん
+    function objects(x) {
+        var o = [];
+        var dx = (x + 6.2) / 4.6;
+        if (Math.abs(dx) < 1) o.push({ lo: 0, hi: 4.4 * Math.pow(1 - dx * dx, 0.62), col: C_RICE });
+        var p = ell(x, 1.4, 2.3, 1.7, 1.55); if (p) o.push({ lo: p[0], hi: p[1], col: C_POTATO });
+        var q = ell(x, 5.6, 1.6, 1.25, 1.15); if (q) o.push({ lo: q[0], hi: q[1], col: C_CARROT });
+        return o;
+    }
+    // 真上から見て、いちばん高い面とその色（最上点バッファの1列ぶん）
+    function topAt(x) {
+        var o = objects(x), t = { y: plateTop(x), col: C_PLATE, obj: false };
+        for (var i = 0; i < o.length; i++) if (o[i].hi > t.y) t = { y: o[i].hi, col: o[i].col, obj: true };
+        return t;
+    }
+    function yieldH(d) { return d <= 0 ? 0 : Math.sqrt(200 * Math.max(0.05, tau) * d / (RHO * GRAV)); }
+    // 出汁は鍋に深く張る。煮汁は器の底から 1.75cm 前後（肉じゃが.js depth）
+    function dashiLevel() { return 0.4 + amt * 2.4; }
+    function glazeLevel() { return 0.6 + amt * 2.0; }
+
+    // 液面の高さ。無い所は -1
+    function surfAt(x) {
+        var pt = plateTop(x);
+        if (mode === "dashi") { var L = dashiLevel(); return L > pt ? L : -1; }
+        if (mode === "glaze") { var L2 = glazeLevel(); return L2 > pt ? L2 : -1; }
+        // ルウ = max(皿底 + h(d), ライス面 + 膜, 具の上面 + 膜)
+        var C = 1.0, Rb = 3 + amt * 7, d = Rb - Math.abs(x - C);
+        if (d <= 0 || pt > 0.58) return -1;
+        var s = pt + Math.min(LIQ.roux.pool, yieldH(d));
+        var o = objects(x);
+        for (var i = 0; i < o.length; i++) {
+            if (o[i].col === C_RICE && o[i].hi > 2.6) continue;   // ライスの頂上までは登らない
+            s = Math.max(s, o[i].hi + LIQ.roux.film * Math.min(1, d / 0.4));
+        }
+        return s;
+    }
+    // 頭を出した具の膜の厚み（肉じゃが.js bakeGlaze の3つの積）
+    function filmAt(x, level) {
+        var P = LIQ[mode], t = topAt(x);
+        if (!t.obj || !P.drain) return 0;
+        var h = Math.max(0, t.y - level), e = 0.12;
+        var slope = (topAt(x + e).y - topAt(x - e).y) / (2 * e), ny = 1 / Math.sqrt(1 + slope * slope);
+        var nb = -1e9;                                  // まわりの高さ（±0.8cm）
+        for (var k = -4; k <= 4; k++) if (k) nb = Math.max(nb, topAt(x + k * 0.2).y);
+        var pk = clamp((nb - t.y) / 0.6, 0, 1);
+        return P.film * Math.exp(-h / P.drain) * (0.40 + 0.60 * (ny * 0.5 + 0.5))
+            + P.pool * pk * (0.35 + 0.65 * Math.exp(-h / P.drain));
+    }
+    function lin(cc) { return [srgbToLin(cc[0]), srgbToLin(cc[1]), srgbToLin(cc[2])]; }
+    // 下の色 × exp(−σ × 2d) ＋ 濁り
+    function through(under, d) {
+        var P = LIQ[mode], hz = lin(P.haze), r = [], tm = 0;
+        for (var k = 0; k < 3; k++) { var T = Math.exp(-P.sigma[k] * sig * 2 * d); r.push(under[k] * T); tm += T / 3; }
+        for (var k2 = 0; k2 < 3; k2++) r[k2] += hz[k2] * P.hazeK * (1 - tm);
+        return r;
+    }
+
+    function draw() {
+        if (tauEl) tauEl.disabled = mode !== "roux";
+        for (var px = 0; px < W; px++) {
+            var x = cmX(px), S = surfAt(x), t = topAt(x), under = lin(t.col), seen;
+            if (S > t.y) seen = through(under, S - t.y);
+            else seen = mode === "roux" ? under : through(under, filmAt(x, mode === "dashi" ? dashiLevel() : glazeLevel()));
+            var o = objects(x), pt = plateTop(x);
+            for (var py = 0; py < H; py++) {
+                var i = py * W + px, col = null, h = (BASE - py) / VS;
+                if (py >= STRIP0 && py < STRIP1) col = seen;
+                else if (py < STRIP1 + 6) col = lin(C_BG);
+                if (h <= pt && h > pt - 0.5) col = lin(C_PLATE).map(function (v) { return v * 0.82; });
+                for (var k = 0; k < o.length && !col; k++) if (h >= o[k].lo && h <= o[k].hi) {
+                    // 切り口。上ほどわずかに明るく
+                    var sh = 0.78 + 0.22 * clamp((h - o[k].lo) / Math.max(0.1, o[k].hi - o[k].lo), 0, 1);
+                    col = lin(o[k].col).map(function (v) { return v * sh; });
+                }
+                if (!col && S > 0 && h <= S && h > pt) col = through(lin(C_BG), S - h);
+                if (!col) col = lin(C_BG);
+                pn.set(i, encode(col[0], false), encode(col[1], false), encode(col[2], false));
+            }
+        }
+        pn.flush();
+        ctx.clearRect(0, 0, c.W, c.H);
+        ctx.drawImage(pn.cv, 0, 0, 640, 360);
+        ctx.fillStyle = "#57493C"; ctx.font = "12px ui-monospace, Consolas, monospace";
+        ctx.fillText("上から見た色", 8, 68);
+        ctx.fillText("断面（縦 1.5 倍）", 8, 90);
+
+        if (!out) return;
+        var P = LIQ[mode], f = function (v) { return (v * 10).toFixed(1); };
+        if (mode === "roux") {
+            var bead = yieldH(0.10), reach = P.pool * P.pool * RHO * GRAV / (200 * Math.max(0.05, tau));
+            out.innerHTML = "σ = " + (6 * sig).toFixed(1) + " /cm（2mm で光が尽きる）<br>" +
+                "縁から 1mm の土手 <b>" + f(bead) + " mm</b><br>" +
+                "たまりの最大 9.5mm に届くのは縁から <b>" + reach.toFixed(1) + " cm</b>" +
+                (tau < 3 ? "<br>水に近く、土手が立ちません" : "");
+        } else if (mode === "dashi") {
+            var T = P.sigma.map(function (s) { return Math.exp(-s * sig * 2 * 1).toFixed(2); });
+            out.innerHTML = "σ = [" + P.sigma.map(function (s) { return (s * sig).toFixed(2); }).join(", ") + "] /cm<br>" +
+                "深さ 1cm の往復で残る光 R/G/B<br><b>" + T.join(" / ") + "</b>";
+        } else {
+            var L = glazeLevel(), tp = filmAt(1.4, L), tg = filmAt(3.55, L);
+            var tr = function (t) { return P.sigma.map(function (s) { return Math.exp(-s * sig * 2 * t).toFixed(2); }).join(" / "); };
+            out.innerHTML = "残る光 R/G/B<br>じゃがいもの頂上 膜 " + f(tp) + "mm → <b>" + tr(tp) + "</b><br>" +
+                "にんじんとの隙間 膜 " + f(tg) + "mm → <b>" + tr(tg) + "</b>";
+        }
+    }
+    mark = lazyLoop(cv, draw);
+    chipGroup("#liqMode", function (v) { mode = v; mark(); });
+    slider("#liqAmt", "#liqAmtV", f2, function (n) { amt = n; mark(); });
+    slider("#liqTau", "#liqTauV", function (n) { return (n < 10 ? n.toFixed(1) : String(n | 0)) + " Pa"; }, function (n) { tau = n; mark(); });
+    slider("#liqSig", "#liqSigV", f2, function (n) { sig = n; mark(); });
+})();
+
+/* ======================================================================
+   21 — 盛る（おでんを鍋に詰める）
+   上から見た高さ場の代わりに、断面の「列ごとの最上点」を1本持つ。
+   具を置くたびに、その具の底の全部の列で下との隙間を測って座らせる
+   ====================================================================== */
+(function () {
+    var cv = $("#moriCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var mode = "field", count = 14, cand = 24, tilt = true, seed = 2121;
+    var out = $("#moriOut");
+    var CX = 320, HALF = 230, FLOOR = 318, RIM = 112;
+    var placed = [], t0 = 0, top = new Float32Array(640), overlap = null, stats = {};
+
+    // 鍋の内側の底（画面の y、下向き）
+    function floorY(x) {
+        var a = Math.abs(x - CX);
+        if (a >= HALF) return RIM - 40;
+        return a <= 150 ? FLOOR : FLOOR - Math.pow((a - 150) / 80, 2) * (FLOOR - RIM);
+    }
+    // おでんの具（左右に寝かせた断面）。色は出汁が染みたあと
+    function poly(kind) {
+        var p = [], i, a;
+        if (kind === "egg") for (i = 0; i < 28; i++) { a = i / 28 * TAU; p.push([Math.cos(a) * 17 * (1 + 0.08 * Math.sin(a)), Math.sin(a) * 22]); }
+        else if (kind === "konnyaku") p = [[-31, 20], [31, 20], [0, -24]];
+        else if (kind === "kombu") p = [[-38, -3.5], [38, -3.5], [38, 3.5], [-38, 3.5]];
+        else {
+            var hw = { daikon: 32, chikuwa: 43, atsuage: 27 }[kind], hh = { daikon: 20, chikuwa: 12, atsuage: 16 }[kind];
+            var r = Math.min(hw, hh) * (kind === "chikuwa" ? 0.95 : 0.35);
+            [[hw - r, hh - r, 0], [-(hw - r), hh - r, 0.25], [-(hw - r), -(hh - r), 0.5], [hw - r, -(hh - r), 0.75]].forEach(function (q) {
+                for (var k = 0; k <= 6; k++) { var b = (q[2] + k / 24) * TAU; p.push([q[0] + Math.cos(b) * r, q[1] + Math.sin(b) * r]); }
+            });
+        }
+        return p;
+    }
+    var KINDS = ["daikon", "egg", "konnyaku", "chikuwa", "atsuage", "kombu"];
+    var COLS = { daikon: "#D9B57A", egg: "#E8CFA0", konnyaku: "#6B6663", chikuwa: "#C98E4E", atsuage: "#A86A33", kombu: "#3A3A22" };
+
+    function rot(p, th) {
+        var ca = Math.cos(th), sa = Math.sin(th);
+        return p.map(function (v) { return [v[0] * ca - v[1] * sa, v[0] * sa + v[1] * ca]; });
+    }
+    // 列ごとの上端と下端（画面の y）。u は中心からの列のずれ
+    function profile(pts) {
+        var mn = {}, mx = {};
+        for (var e = 0; e < pts.length; e++) {
+            var A = pts[e], B = pts[(e + 1) % pts.length];
+            var n = Math.max(1, Math.ceil(Math.abs(B[0] - A[0]) * 2));
+            for (var s = 0; s <= n; s++) {
+                var t = s / n, x = Math.round(mix(A[0], B[0], t)), y = mix(A[1], B[1], t);
+                if (!(x in mn) || y < mn[x]) mn[x] = y;
+                if (!(x in mx) || y > mx[x]) mx[x] = y;
+            }
+        }
+        var cols = Object.keys(mn).map(Number);
+        return { u: cols, up: mn, dn: mx };
+    }
+    function slopeUnder(x, hw) {
+        var sx = 0, sy = 0, sxx = 0, sxy = 0, n = 0;
+        for (var u = -hw; u <= hw; u += 2) {
+            var X = x + u; if (X < 0 || X > 639) continue;
+            sx += u; sy += top[X]; sxx += u * u; sxy += u * top[X]; n++;
+        }
+        return (n * sxy - sx * sy) / Math.max(1e-6, n * sxx - sx * sx);
+    }
+
+    function solve() {
+        var R = new Rng(seed);
+        for (var x = 0; x < 640; x++) top[x] = floorY(x);
+        placed = [];
+        for (var k = 0; k < count; k++) {
+            var kind = KINDS[Math.floor(R.next() * KINDS.length)];
+            var base = poly(kind), best = null;
+            var tries = mode === "point" ? 1 : cand;
+            for (var cI = 0; cI < tries; cI++) {
+                var hw0 = 44, px = Math.round(CX + (R.next() * 2 - 1) * (HALF - hw0));
+                // 置き場所を先に決め、その下の面の傾きに沿わせた姿勢で試す
+                var th = R.range(-0.12, 0.12);
+                if (tilt && mode === "field") th += clamp(Math.atan(slopeUnder(px, 30)), -0.7, 0.7);
+                var pts = rot(base, th), pr = profile(pts), cy;
+                if (mode === "point") {
+                    cy = top[px] - (pr.dn[0] !== undefined ? pr.dn[0] : 0);   // 中心の真下1点だけ
+                } else {
+                    cy = 1e9;                                     // 底の全部の列で、下との隙間を測る
+                    pr.u.forEach(function (u) {
+                        var X = px + u; if (X < 0 || X > 639) return;
+                        cy = Math.min(cy, top[X] - pr.dn[u]);
+                    });
+                }
+                if (!best || cy > best.cy) best = { kind: kind, x: px, cy: cy, th: th, pts: pts, pr: pr };   // 画面の y が大きい＝低い
+            }
+            best.pr.u.forEach(function (u) {
+                var X = best.x + u; if (X < 0 || X > 639) return;
+                top[X] = Math.min(top[X], best.cy + best.pr.up[u]);
+            });
+            placed.push(best);
+        }
+        measure();
+        t0 = performance.now();
+    }
+
+    // めり込み（具どうし・鍋）と、届いた範囲を数える。半分の解像度で塗り重ねる
+    function measure() {
+        var w = 320, h = 180, oc = document.createElement("canvas");
+        oc.width = w; oc.height = h;
+        var o = oc.getContext("2d");
+        o.globalCompositeOperation = "lighter";
+        o.fillStyle = "rgb(0,0,60)";
+        o.beginPath(); o.moveTo(0, h);
+        for (var x = 0; x <= 640; x += 4) o.lineTo(x / 2, floorY(x) / 2);
+        o.lineTo(w, h); o.closePath(); o.fill();
+        placed.forEach(function (p) {
+            o.beginPath();
+            p.pts.forEach(function (v, i) { var X = (p.x + v[0]) / 2, Y = (p.cy + v[1]) / 2; i ? o.lineTo(X, Y) : o.moveTo(X, Y); });
+            o.closePath(); o.fill();
+        });
+        var d = o.getImageData(0, 0, w, h).data, n = 0;
+        overlap = document.createElement("canvas"); overlap.width = w; overlap.height = h;
+        var ov = overlap.getContext("2d"), img = ov.createImageData(w, h);
+        for (var i = 0; i < w * h; i++) if (d[i * 4 + 2] >= 110) {
+            n++; img.data[i * 4] = 200; img.data[i * 4 + 1] = 30; img.data[i * 4 + 2] = 30; img.data[i * 4 + 3] = 200;
+        }
+        ov.putImageData(img, 0, 0);
+        var edge = placed.filter(function (p) { return Math.abs(p.x - CX) > 140; }).length;
+        var hi = 1e9; placed.forEach(function (p) { hi = Math.min(hi, p.cy); });
+        stats = { pen: n * 4, edge: edge, height: Math.round(FLOOR - hi) };
+    }
+
+    addLoop(cv, function () {
+        var now = performance.now();
+        ctx.clearRect(0, 0, c.W, c.H);
+        // 鍋
+        ctx.beginPath(); ctx.moveTo(CX - HALF - 14, RIM - 6);
+        for (var x = CX - HALF; x <= CX + HALF; x += 4) ctx.lineTo(x, floorY(x) + 8);
+        ctx.lineTo(CX + HALF + 14, RIM - 6);
+        ctx.strokeStyle = "#3A3A3C"; ctx.lineWidth = 10; ctx.lineJoin = "round"; ctx.stroke();
+        // 具を1個ずつ落とす
+        var shown = Math.min(placed.length, Math.floor((now - t0) / 140));
+        for (var i = 0; i < placed.length && i <= shown; i++) {
+            var p = placed[i], f = i < shown ? 1 : clamp((now - t0 - i * 140) / 140, 0, 1);
+            var y = mix(-40, p.cy, f * f);
+            ctx.beginPath();
+            p.pts.forEach(function (v, j) { j ? ctx.lineTo(p.x + v[0], y + v[1]) : ctx.moveTo(p.x + v[0], y + v[1]); });
+            ctx.closePath();
+            ctx.fillStyle = COLS[p.kind]; ctx.fill();
+            ctx.strokeStyle = "rgba(40,24,10,.45)"; ctx.lineWidth = 1; ctx.stroke();
+        }
+        var done = shown >= placed.length;
+        if (done && overlap) ctx.drawImage(overlap, 0, 0, 640, 360);
+        // 出汁。液面より下は琥珀色に沈む
+        var lev = FLOOR - 120;
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(CX - HALF, lev);
+        for (var x2 = CX - HALF; x2 <= CX + HALF; x2 += 4) { var fy = floorY(x2); if (fy > lev) ctx.lineTo(x2, fy); }
+        ctx.lineTo(CX + HALF, lev); ctx.closePath();
+        ctx.fillStyle = "rgba(143,82,28,.28)"; ctx.fill();
+        ctx.restore();
+        if (out) {
+            out.innerHTML = (done ? "" : "詰めています… ") + placed.length + " 個<br>" +
+                "めり込み <b" + (stats.pen > 400 ? " style='color:#8F1619'" : "") + ">" + stats.pen + " px²</b><br>" +
+                "鍋のまわりまで届いた具 <b>" + stats.edge + "</b> 個 / 山の高さ " + stats.height + " px";
+        }
+    });
+
+    chipGroup("#moriMode", function (v) { mode = v; solve(); });
+    slider("#moriCount", "#moriCountV", function (n) { return String(n | 0); }, function (n) { count = n | 0; solve(); });
+    slider("#moriCand", "#moriCandV", function (n) { return String(n | 0); }, function (n) { cand = n | 0; solve(); });
+    toggle("#moriTilt", function (v) { tilt = v; solve(); });
+    var rb = $("#moriRun"); if (rb) rb.addEventListener("click", function () { seed++; solve(); });
+})();
+
+/* ======================================================================
    ファイル一覧（図鑑とソースビューアで共有）
    [表示名, ファイル名, 色, 説明]
    色は各ファイルのコードに実際に書かれている値
    ====================================================================== */
 var FILES = [
-    ["トースト", "トースト.js", "#E09B53", "14本でいちばん素直。輪郭を SDF で作り、す（気泡）を彫り、焼き色を塗る。最初に読むならこれ。"],
+    // パン・粉もの
+    ["トースト", "トースト.js", "#E09B53", "構造がいちばん素直な1本。輪郭を SDF で作り、す（気泡）を彫り、焼き色を塗る。最初に読むならこれ。"],
     ["エッグトースト", "エッグトースト.js", "#E5B45C", "トースト.js との差分。くぼみ・卵・焼き分けの3点だけで別の料理になる。17章の教材。"],
+    ["フランスパン", "フランスパン.js", "#CC8F4F", "1本の「場」（半径・クープ・耳）から形とテクスチャの両方を引く。閉じた面なので、ノイズは UV ではなくワールド座標で引いて継ぎ目を消す。"],
+    ["パンケーキ", "パンケーキ.js", "#EDAB37", "焼き色は縁の淡い環と側面の帯。天面のシロップは吸収を焼き込み、垂れと糸だけ背景を映した屈折で描く。"],
+    ["ハンバーガー", "ハンバーガー.js", "#603017", "積み順どおりに物理で落とす。当たり判定は代理形状、見た目はその子として吊る。ゴマは実体、トマトは包丁の断面。21章の教材。"],
     ["たこ焼き", "たこ焼き.js", "#965821", "焼き色が形と相関する話の本命。ソースは実体、青のりは板ポリゴン、そして物理を使わない。"],
+    ["たい焼き", "たい焼き.js", "#D79D55", "型の縁にできるミミと、薄い所ほど濃い焼き色。手前の1個はクリックで割れ、生地のちぎれ面とつぶあんが見える。"],
+    ["餃子", "餃子.js", "#F2A642", "焼き色が底面から何 cm まで回るか（reach）と、焼き面の網目。17章で「15本目に」と挙げた題材。"],
+    // 揚げ物
     ["唐揚げ", "唐揚げ.js", "#AB5517", "衣の粒立ちと、揚げ色の頂点カラー焼き込み。皿への山積みは Havok で1個ずつ落として作る。"],
+    ["とんかつ", "とんかつ.js", "#D49044", "パン粉は粒ではなく薄い板。断面の4層（パン粉・バッター・脂・肉）。扇の並べ方は式で解いてから Havok で仕上げる。18・21章の教材。"],
+    ["エビフライ", "エビフライ.js", "#ED5A1B", "参考写真から測ったパン粉の5色。尾の手前だけ衣が無い。Havok で1本ずつ落とし、キャベツに寄りかからせる。"],
+    ["コロッケ", "コロッケ.js", "#EDA854", "エビフライ.js のパン粉の衣をそのまま流用。小判型と、割った断面（じゃがいも・ひき肉・玉ねぎ）を同じ関数で作る。"],
+    ["天ぷら", "天ぷら.js", "#FECD6A", "衣の厚みと「花」。厚い所ほど白く、薄い谷ほど濃い。パン粉とは揚げ色の向きが逆。18章の教材。"],
+    // 肉・魚
     ["ウィンナー", "ウィンナー.js", "#CC6528", "弓なりの掃引と、端の結び目のひだ。当たり判定を凸包からカプセル列へ直した記録つき。"],
+    ["生姜焼き", "生姜焼き.js", "#95541E", "薄切り肉は、しわの寄った中立面を法線方向にずらして厚みを付ける。たれの膜は厚みから Beer–Lambert で焼く。"],
     ["焼き魚（サンマ）", "焼き魚（サンマ）.js", "#142426", "実写に寄せた10項目の修正が、そのまま残る。銀は metallic ではなく虹彩。焼き目は全面を覆わせない。"],
     ["焼き魚（鮭）", "焼き魚（鮭）.js", "#E07852", "切り身。筋節の場を作って断面に出す。皮まで含めて1メッシュで作る。"],
-    ["ご飯", "ご飯.js", "#E8DCBE", "約1400粒を1粒ずつ置く。説得力を決めるのは粒間の暗がりで、それを配置時に焼き込む。"],
+    // ご飯もの
+    ["ご飯", "ご飯.js", "#E8DCBE", "約1400粒を1粒ずつ置く。説得力を決めるのは粒間の暗がりで、それを配置時に焼き込む。白が灰色に見える原因は照明比だった。"],
     ["お寿司", "お寿司.js", "#8F1619", "ご飯.js の続き。ネタは表面ではなく包丁の切り口。霜降りは色ではなく実体。"],
-    ["お味噌汁", "お味噌汁.js", "#D7C9A0", "汁は透明ではなく濁り。液体そのものは作らず、沈んだ具の深さを 1-exp(-σd) で汁面に焼き込む。13章の応用。"],
+    ["チャーハン", "チャーハン.js", "#D8B36C", "ご飯.js の米粒を黄色く塗っても白飯にしかならない。粒ごとの色の分散・向きの乱れ・粒間の隙間の3つ。15章の応用。"],
+    ["カレー", "カレー.js", "#744010", "ルウは降伏応力流体。縁の土手を h = √(2τy x / ρg) で作り、ルウ面 = max(皿底 + h, ライス + 膜, 具 + 膜)。20章の教材。"],
+    ["牛丼", "牛丼.js", "#8F5929", "つゆを吸って濃くなった牛バラと、透けた玉ねぎ。肉の濃さは肉の色ではなく、琥珀色のつゆの膜が作る。"],
+    // 汁・煮物
+    ["お味噌汁", "お味噌汁.js", "#D7C9A0", "汁は透明ではなく濁り。液体そのものは作らず、沈んだ具の深さを 1-exp(-σd) で汁面に焼き込む。20章の教材。"],
+    ["おでん", "おでん.js", "#8F521C", "具は出汁に沈む。液面は不透明な1枚にして、沈んだ具の色と深さを焼き込む。具は高さ場でいちばん低い所へ詰める。20・21章の教材。"],
+    ["肉じゃが", "肉じゃが.js", "#5D3212", "煮汁は透明なニス。膜の厚みを高さ・向き・隙間の3つで決める。盛り付けは凸包・布・鎖を使い分けた Havok。20・21章の教材。"],
+    // 麺
+    ["うどん", "うどん.js", "#EFE7CF", "曲率を持続させたウォーカーと位置ベースの緩和で麺を絡ませる。つゆは RGB 別の吸収。天ぷらつき。19章の教材。"],
+    ["そば", "そば.js", "#B3A58C", "うどん.js の派生。1.5mm 角の角が立った断面、灰色を含んだ地色、黒い星。箸でつかんだ束も同じ経路で掃引する。"],
+    ["ラーメン", "ラーメン.js", "#F0C973", "そば.js の派生。かん水の黄色と透け、ちぢれ、スープに浮く香味油の油滴、巻いたチャーシューの渦。"],
+    ["スパゲッティ（ナポリタン）", "スパゲッティ（ナポリタン）.js", "#E77A22", "麺は1本ずつの管。見えない下の層は暗い芯で塞ぐ。ソースは上にかからず、炒めて麺そのものが橙になる。19章の教材。"],
+    ["スパゲッティ（トマトソース）", "スパゲッティ（トマトソース）.js", "#CC2A0D", "ナポリタン.js の派生。トングでねじった同心の輪と、麺の上面の高さ場にかぶせたソースの膜。"],
+    ["スパゲッティ（カルボナーラ）", "スパゲッティ（カルボナーラ）.js", "#F9CF59", "トマトソース.js の派生。色の主役は卵色の麺。ソースは麺の間のとろみ。厚切りベーコンと粗挽き黒胡椒。"],
+    ["焼きそば", "焼きそば.js", "#EB9E2B", "トマトソース.js の派生。パスタでは消した縮れを足し、麺の量は実寸（40m）。具を突き抜けないよう、麺ごとに上を通るか下をくぐるかを決める。"],
+    // 甘いもの
     ["クッキー", "クッキー.js", "#8F5A2B", "7種を断面と外形の数値だけで作り分ける。工業製品なので乱数の幅が狭い。"],
     ["チョコレート", "チョコレート.js", "#3A2116", "外形（スーパー楕円）× 縦断面。ブルームと櫛目。Havok で1粒ずつ落とす。"],
     ["花見団子", "花見団子.js", "#F49DAD", "たれは色ではなく層。串の入口はすり鉢状にへこむ。13章の教材。"],
-    ["月見団子", "月見団子.js", "#D8CFBB", "接触で潰れる。減った体積の行き先と、縁の丸い土手。16章の教材。"]
+    ["月見団子", "月見団子.js", "#D8CFBB", "接触で潰れる。減った体積の行き先と、縁の丸い土手。16章の教材。"],
+    ["ドーナツ", "ドーナツ.js", "#DD9E55", "型に接した滑らかな面と、膨れてざらついた面の2つの肌。閉じた輪なのでノイズは3Dで引き、当たり判定はカプセル列で穴を残す。"],
+    ["チョコバナナ", "チョコバナナ.js", "#5D3322", "先端を下にして引き上げたチョコの垂れと滴。カラースプレーは上から振った背の側にだけ、半分沈めて付ける。"],
+    ["ロールケーキ", "ロールケーキ.js", "#BB7745", "断面の渦巻きは線ではなくシート。生地とクリームの三日月を、テクスチャと形状が同じ断面関数から引く。"]
 ];
 function viewHref(file) { return "view.html?f=" + encodeURIComponent(file); }
 function playHref(file) { return "play.html?f=" + encodeURIComponent(file); }

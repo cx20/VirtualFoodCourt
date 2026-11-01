@@ -32,6 +32,10 @@
       <a href="ch15.html">15 粒</a>
       <a href="ch16.html">16 潰れ</a>
       <a href="ch17.html">17 差分</a>
+      <a href="ch18.html">18 衣</a>
+      <a href="ch19.html">19 麺</a>
+      <a href="ch20.html">20 汁</a>
+      <a href="ch21.html">21 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -83,7 +87,7 @@
     <span class="k">const</span> c = h2(xi, yi + <span class="n">1</span>, seed), d = h2(xi + <span class="n">1</span>, yi + <span class="n">1</span>, seed);
     <span class="k">return</span> mix(mix(a, b, u), mix(c, d, u), v);
 };</pre>
-      <figcaption>14本すべてに、ほぼこの形で入っている</figcaption>
+      <figcaption>ほとんどのサンプルに、ほぼこの形で入っている</figcaption>
     </figure>
 
     <h3>1枚では足りない。だから重ねる</h3>
@@ -143,7 +147,8 @@
       ウィンナーや秋刀魚のように<b>筒の表面に模様を巻く</b>とき、
       ふつうのノイズを使うと、一周して戻ってきたところで模様が切れて縦の線が入ります。
       そこで、横方向（u）だけ格子の番号を周期で折り返した専用のノイズを使います。
-      14本のうち筒状のものには、必ずこの <code>v2u</code> が入っています。
+      最初の14本のうち筒状のものには、必ずこの <code>v2u</code> が入っています。
+      フランスパン.js のように、UV ではなく3Dのワールド座標でノイズを引いて、継ぎ目そのものを作らないやり方もあります。
     </p>
     <div class="trap">
       <span class="label">つまずきポイント</span>
