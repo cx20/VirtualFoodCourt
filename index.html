@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>たべもののつくりかた — コードで料理をつくる技術ノート</title>
-<meta name="description" content="Babylon.js で料理を手続き的に生成する14本のサンプルを、中学生・高校生向けに解説する学習ポータル">
+<meta name="description" content="Babylon.js で料理を手続き的に生成する39本のサンプルを、中学生・高校生向けに解説する学習ポータル">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/labs.js" defer></script>
 </head>
@@ -32,6 +32,10 @@
       <a href="ch15.html">15 粒</a>
       <a href="ch16.html">16 潰れ</a>
       <a href="ch17.html">17 差分</a>
+      <a href="ch18.html">18 衣</a>
+      <a href="ch19.html">19 麺</a>
+      <a href="ch20.html">20 汁</a>
+      <a href="ch21.html">21 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -46,7 +50,7 @@
       <p class="eyebrow">Babylon.js / procedural food</p>
       <h1>3Dの料理は、<br><span class="accent">数式から焼ける</span>。</h1>
       <p class="lede">
-        このサイトで扱う14本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        このサイトで扱う39本のプログラムは、3Dモデルも写真も1枚も読み込みません。
         点の座標を計算で並べ、焼き色をその場で描き、たれの濃さを厚みから解く。
         絵を描く技術ではなく、形と質感を組み立てる技術です。
         中学・高校の数学で追えるところから順に見ていきます。
@@ -86,7 +90,7 @@
     <ul class="roadmap">
       <li><span class="rn">A</span><span class="rt"><b>とにかく動かしたい人</b><span><a href="zukan.html">図鑑</a>の写真を押す → その料理がこのサイトの中で動きます</span></span></li>
       <li><span class="rn">B</span><span class="rt"><b>順番に理解したい人</b><span>01 → 02 → 03 …… と上から。04章（かたち）と05章（面と法線）がこの教材の背骨です。</span></span></li>
-      <li><span class="rn">C</span><span class="rt"><b>料理として面白い所だけ見たい人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch17.html">17</a>）へ。焼き色・たれ・透け・粒・潰れ。野菜には出てこない5つです。</span></span></li>
+      <li><span class="rn">C</span><span class="rt"><b>料理として面白い所だけ見たい人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch17.html">17</a>）へ。焼き色・たれ・透け・粒・潰れ。野菜には出てこない5つです。続く第III部（<a href="ch18.html">18</a>〜<a href="ch21.html">21</a>）は衣・麺・汁・盛り付け。</span></span></li>
       <li><span class="rn">D</span><span class="rt"><b>コードを読みたい人</b><span><a href="view.html">ソース</a>でファイルを選ぶ → 対応する章に戻る</span></span></li>
     </ul>
     <div class="note">
@@ -117,7 +121,7 @@
       <a class="hubcard" href="start.html" style="--ch:var(--p-kitsune)">
         <span class="no">00<span style="opacity:.55;margin-left:8px">START</span></span>
         <h3>まず動かしてみる</h3>
-        <p>インストールなし。ブラウザだけで14本を動かす手順。まずここから。</p>
+        <p>インストールなし。ブラウザだけで39本を動かす手順。まずここから。</p>
       </a>
       <a class="hubcard" href="ch01.html" style="--ch:var(--p-koge)">
         <span class="no">01<span style="opacity:.55;margin-left:8px">CONFIG</span></span>
@@ -231,25 +235,67 @@
   </div>
 </section>
 
+<section class="chapter" id="chapters3" style="--ch:var(--p-dashi)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">第III部<small style="opacity:.7">PART III</small></div>
+    <div>
+      <h2>定食屋の一皿をつくる（18〜21）</h2>
+      <p class="sub">揚げる・茹でる・煮る・盛る。25本が増えて出てきた4つの難所</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      サンプルは14本から39本に増えました。増えたのは、とんかつ・天ぷら・うどん・ラーメン・スパゲッティ・
+      カレー・肉じゃが・おでんのような、定食屋や麺屋に並ぶ料理です。
+      第II部の考え方はそのまま使えますが、<b>衣の作り方、何十本もの麺の絡み方、汁に沈んだ具の見え方、
+      鍋いっぱいに詰める盛り付け</b>の4つは、新しい道具が要りました。
+    </p>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+      <a class="hubcard" href="ch18.html" style="--ch:var(--p-panko)">
+        <span class="no">18<span style="opacity:.55;margin-left:8px">Batter</span></span>
+        <h3>衣は、粒ではなく板と泡</h3>
+        <p>パン粉は寝ながら重なった薄い板、天ぷらは泡の花。揚げ色の向きは衣によって逆になる。</p>
+      </a>
+      <a class="hubcard" href="ch19.html" style="--ch:var(--p-napoli)">
+        <span class="no">19<span style="opacity:.55;margin-left:8px">Strands</span></span>
+        <h3>麺は、手で並べると籠になる</h3>
+        <p>麺を手で並べると籠になる。曲がりぐせのある歩行で描き、押し合わせて落ち着かせる。</p>
+      </a>
+      <a class="hubcard" href="ch20.html" style="--ch:var(--p-dashi)">
+        <span class="no">20<span style="opacity:.55;margin-left:8px">Liquids</span></span>
+        <h3>汁は作らずに、沈んだものを焼き込む</h3>
+        <p>汁は透明なメッシュにしない。沈んだ物の深さを液面に焼く。カレーは水ではない。</p>
+      </a>
+      <a class="hubcard" href="ch21.html" style="--ch:var(--p-seiji)">
+        <span class="no">21<span style="opacity:.55;margin-left:8px">Plating</span></span>
+        <h3>盛り付けは、料理ごとに解き方を選ぶ</h3>
+        <p>物理に任せるか、高さ場で解くか、式で解くか。盛り付けの解き方は料理が決める。</p>
+      </a>
+    </div>
+  </div>
+</section>
+
 <section class="chapter" id="refs" style="--ch:var(--p-karaage)">
   <div class="chapter-head">
     <div class="chnum" style="font-size:15px">資料<small style="opacity:.7">REFERENCE</small></div>
     <div>
-      <h2>14本を引く</h2>
+      <h2>39本を引く</h2>
       <p class="sub">ファイルから逆に読みたいとき</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
     <div class="hub">
       <a class="hubcard" href="zukan.html" style="--ch:var(--p-koge)">
-        <span class="no">14<span style="opacity:.55;margin-left:8px">FILES</span></span>
+        <span class="no">39<span style="opacity:.55;margin-left:8px">FILES</span></span>
         <h3>どのファイルで、何が学べるか</h3>
-        <p>14本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
+        <p>39本それぞれの「そこでしか出てこない技術」の一覧。カードから、その場で動かせます。</p>
       </a>
       <a class="hubcard" href="view.html" style="--ch:var(--p-karaage)">
         <span class="no">SRC<span style="opacity:.55;margin-left:8px">SOURCE</span></span>
         <h3>サンプルのソースを読む</h3>
-        <p>14本の .js をその場で表示。コピーすれば、そのまま Playground に貼れます。</p>
+        <p>39本の .js をその場で表示。コピーすれば、そのまま Playground に貼れます。</p>
       </a>
       <a class="hubcard" href="terms.html" style="--ch:var(--p-choco)">
         <span class="no">用語<span style="opacity:.55;margin-left:8px">GLOSSARY</span></span>

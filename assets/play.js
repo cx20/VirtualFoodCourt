@@ -88,8 +88,12 @@ function run(code) {
         say("この環境では WebGL が使えないようです（" + e.message + "）", true);
         return;
     }
-    // Playground と同じ形にする。末尾の export は素の実行では通らない
-    var body = code.replace(/^\s*export\s+default\s+createScene\s*;?\s*$/m, "");
+    // Playground と同じ形にする。export は素の実行では通らないので、
+    // 末尾の「export default createScene;」と、宣言の頭の「export」を落とす
+    // （餃子.js は「export const createScene = …」で始まる）
+    var body = code
+        .replace(/^\s*export\s+default\s+createScene\s*;?\s*$/m, "")
+        .replace(/^(\s*)export\s+(?=(?:const|let|var|async|function)\b)/gm, "$1");
     var make;
     try {
         make = new Function("canvas", "engine", "HavokPhysics",
