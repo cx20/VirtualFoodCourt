@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>触れ合うと、潰れる — たべもののつくりかた</title>
-<meta name="description" content="触れ合うと、潰れる">
+<title>衣は、粒ではなく板と泡 — たべもののつくりかた</title>
+<meta name="description" content="衣は、粒ではなく板と泡">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/labs.js" defer></script>
 </head>
@@ -27,15 +27,13 @@
       <a href="ch10.html">10 曲がり</a>
       <a href="ch11.html">11 光</a>
       <a href="ch12.html">12 焼き色</a>
-      <a href="ch13.html">13 たれ</a>
-      <a href="ch14.html">14 透け</a>
-      <a href="ch15.html">15 粒</a>
-      <a href="ch16.html" aria-current="page">16 潰れ</a>
-      <a href="ch17.html">17 差分</a>
-      <a href="ch18.html">18 衣</a>
-      <a href="ch19.html">19 麺</a>
-      <a href="ch20.html">20 汁</a>
-      <a href="ch21.html">21 盛る</a>
+      <a href="ch13.html">13 透け</a>
+      <a href="ch14.html">14 粒</a>
+      <a href="ch15.html">15 差分</a>
+      <a href="ch16.html" aria-current="page">16 衣</a>
+      <a href="ch17.html">17 麺</a>
+      <a href="ch18.html">18 汁</a>
+      <a href="ch19.html">19 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -44,130 +42,188 @@
 </header>
 
 <main id="top" class="page">
-<div class="wrap" style="--ch:var(--p-yomogi)">
+<div class="wrap" style="--ch:var(--p-panko)">
   <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第16章</p>
-<section class="chapter" id="ch16" style="--ch:var(--p-yomogi)">
+<section class="chapter" id="ch16" style="--ch:var(--p-panko)">
   <div class="chapter-head">
-    <div class="chnum">16<small>Contact</small></div>
+    <div class="chnum">16<small>Batter</small></div>
     <div>
-      <h2>触れ合うと、潰れる</h2>
-      <p class="sub">contact deformation — やわらかい物の積み方</p>
+      <h2>衣は、粒ではなく板と泡</h2>
+      <p class="sub">coating — パン粉と天ぷらの衣は、形の作り方から違う</p>
     </div>
   </div>
   <div class="body">
     <div class="recap">
       <span class="label">この章の3行まとめ</span>
       <ul>
-        <li>団子を真球のまま積むと、<b>発泡スチロールの球</b>に見えます。</li>
-        <li>自重と押し合いで、接するところが平らになる。下の段ほど潰れます。</li>
-        <li>潰した<b>体積の行き先</b>と、接触の縁にできる<b>丸い土手</b>が、やわらかさの正体です。</li>
+        <li>揚げ物の衣を、等方的な（どの向きにも同じ）ノイズででこぼこにすると、<b>から揚げか岩</b>になります。</li>
+        <li>パン粉は<b>寝ながら重なった薄い板</b>、天ぷらの衣は<b>はじけた泡（花）</b>。でこぼこの作り方そのものが違います。</li>
+        <li>揚げ色は形で決まります。ただし向きが逆で、<b>パン粉は出っぱった破片の先が濃く、天ぷらは衣が厚い所ほど白い</b>。</li>
       </ul>
     </div>
 
     <p>
-      月見団子は15個を三方に積みます（9 + 4 + 2）。
-      球を15個並べて終わり、にはなりません。月見団子.js の冒頭にこうあります。
+      ここから第III部です。サンプルは最初の14本から大きく増えました。
+      増えたものの多くは、定食屋や麺屋に並ぶ料理です。とんかつ、エビフライ、コロッケ、天ぷら、
+      うどん、そば、ラーメン、スパゲッティ、焼きそば、カレー、肉じゃが、おでん、牛丼……。
+      第II部の4章で説明できることも多いのですが、それでは足りない難所が4つ出てきました。
+      衣・麺・汁・盛り付けです。最初は衣から見ていきます。
+    </p>
+    <p>
+      揚げ物は4本あります（とんかつ.js・エビフライ.js・コロッケ.js・天ぷら.js）。
+      うどん.js とそば.js にも、えび天と大葉の天ぷらが乗っています。
+      とんかつ.js の先頭には、外すと「茶色い直方体」になる要点が並んでいて、2番目がこれです。
     </p>
     <div class="note">
-      <b>「月見団子は球ではない。自重と隣どうしの押し合いで、接する所が平らになる。
-      下の段ほど潰れ、上へ行くほど丸い。真球のまま積むと発泡スチロールに見える」</b>
+      <b>「パン粉は『粒』ではなく『薄い板』。伸びた破片が寝ながら重なっている。
+      等方的なノイズで凹凸を付けると、から揚げか岩にしかならない」</b>
     </div>
     <p>
-      平らにするだけなら簡単です。接触面の側を切り落とせばよい。
-      ところが、それだけでは<b>やせた球</b>になります。餅は非圧縮なので、
-      押されて減った体積はどこかへ行かなければいけません。
-      行き先は、押されていない自由な面です。つまり<b>他の方向がその分ふくらむ</b>。
+      03章のノイズは、どの向きにも同じ細かさでした。そういうノイズにしきい値をかけると、
+      丸い粒が散らばった模様になります。唐揚げの衣ならそれで合っています。
+      ところがパン粉は、パンを砕いた<b>薄い破片</b>です。破片は衣の表面に寝て、少しずつ向きを変えながら重なっています。
+      丸い粒では、何をしてもパン粉には見えません。
+    </p>
+
+    <h3>軸をつぶしたノイズを3枚重ねる</h3>
+    <p>
+      とんかつ.js は、ノイズを片方向に引き伸ばしています。横に細かく縦に粗いノイズにすると、
+      模様が横長の筋になります。向きを変えて3枚作り、各点でいちばん大きい値（max）を取ると、
+      <b>向きの違う細長い破片が重なった模様</b>ができます。
     </p>
     <figure>
-<pre><span class="c">// 方向ごとの半径を smin で丸める（＝縁に土手のある柔らかい接触）</span>
-<span class="k">let</span> r = R;
-<span class="k">for</span> (<span class="k">const</span> c of contacts) {
-    <span class="k">const</span> d = dot(dir, c.n);
-    <span class="k">if</span> (d &gt; <span class="n">0</span>) r = smin(r, c.dist / d, R * <span class="n">0.090</span>);  <span class="c">// なめらかな最小値</span>
-}
-<span class="c">// 切り取った球冠の体積ぶんだけ全体を膨らませる（餅は非圧縮）</span>
-r *= Math.cbrt(<span class="n">1</span> + volumeLoss / sphereVolume);</pre>
-      <figcaption>月見団子.js。smin（多項式スムーズ最小値）が「丸い土手」を作る</figcaption>
+<pre><span class="c">// 伸びた破片。周期を軸で変えて板状にし、向き違いの 3 枚で max</span>
+<span class="k">const</span> s1 = A._afbm(u * <span class="n">10</span>, v * <span class="n">42</span>, ...);              <span class="c">// 縦長の破片</span>
+<span class="k">const</span> s2 = A._afbm(u * <span class="n">44</span>, v * <span class="n">11</span>, ...);              <span class="c">// 横長の破片</span>
+<span class="k">const</span> s3 = A._afbm((u + v) * <span class="n">26</span>, (u - v) * <span class="n">9</span>, ...);   <span class="c">// 斜めの破片</span>
+<span class="c">// 【対策】閾値の幅を広く取ると「丸い粒」になる。狭くして
+//         立ち上がりを急にすると、上面が平らな板＝パン粉になる</span>
+<span class="k">const</span> sh = Math.max(smooth(<span class="n">0.500</span>, <span class="n">0.552</span>, s1),
+           Math.max(smooth(<span class="n">0.500</span>, <span class="n">0.552</span>, s2), smooth(<span class="n">0.500</span>, <span class="n">0.552</span>, s3)));</pre>
+      <figcaption>とんかつ.js の crustHeight。しきい値の幅は 0.052 しかない</figcaption>
     </figure>
+    <p>
+      もうひとつの工夫が、<b>しきい値の幅を狭くする</b>ことです。
+      <code>smooth(0.500, 0.552, s)</code> は、s が 0.500 から 0.552 に上がるあいだに 0 から 1 へ変わります。
+      幅が狭いので、破片の縁は崖のように立ち上がり、上面は平らになります。これが「板」です。
+      幅を広くすると縁がなだらかな山になり、丸い粒に戻ってしまいます。
+    </p>
 
-    <div class="lab" id="lab16">
-      <p class="lab-title">実験 — 潰す / 体積を戻す / 土手をつける</p>
+    <div class="lab" id="lab18">
+      <p class="lab-title">実験 — 粒の衣 / パン粉の衣 / 天ぷらの衣</p>
       <div class="lab-cols side">
         <div class="controls">
-          <div class="ctrl">
-            <label for="squashAmt">潰し量<span class="v" id="squashAmtV">0.30</span></label>
-            <input type="range" id="squashAmt" min="0" max="0.6" step="0.01" value="0.3">
+          <div class="chips" id="coatMode">
+            <button class="chip" type="button" data-v="iso">等方ノイズ（粒）</button>
+            <button class="chip" type="button" data-v="panko" aria-pressed="true">パン粉（薄い板）</button>
+            <button class="chip" type="button" data-v="tempura">天ぷら（花）</button>
           </div>
-          <label class="switch"><input type="checkbox" id="squashVol" checked>減った体積を戻す</label>
-          <label class="switch"><input type="checkbox" id="squashRim" checked>接触の縁を丸める（土手）</label>
-          <label class="switch"><input type="checkbox" id="squashStack" checked>下の段ほど強く潰す</label>
-          <div class="readout" id="squashOut">—</div>
+          <div class="ctrl">
+            <label for="coatFry">揚げ加減<span class="v" id="coatFryV">0.55</span></label>
+            <input type="range" id="coatFry" min="0" max="1" step="0.01" value="0.55">
+          </div>
+          <div class="ctrl">
+            <label for="coatAmt">破片・花の量<span class="v" id="coatAmtV">0.60</span></label>
+            <input type="range" id="coatAmt" min="0" max="1" step="0.01" value="0.6">
+          </div>
+          <label class="switch"><input type="checkbox" id="coatCorr" checked>揚げ色を形と結びつける</label>
+          <div class="readout" id="coatOut">—</div>
         </div>
-        <canvas id="squashCanvas" width="640" height="360" aria-label="団子を積んで接触面で潰す実験"></canvas>
+        <canvas id="coatCanvas" width="640" height="360" aria-label="揚げ物の衣の作り方を切り替える実験"></canvas>
       </div>
       <p class="hint">
-        3つのスイッチを全部切ると、ただの球の山になります。
-        1つずつ入れていくと、どれがどれだけ効いているかが分かります。
+        光は左上から当てています。3つのモードで違うのは「でこぼこの作り方」と「揚げ色を何から決めるか」だけです。
+        「揚げ色を形と結びつける」を切ると、色だけが形と無関係なノイズになります。
+        12章で見たのと同じく、柄の付いた布に見えるはずです。
       </p>
     </div>
 
-    <h3>なめらかな最小値（smin）</h3>
+    <h3>天ぷらの衣は「花」で決まる</h3>
     <p>
-      接触面を作るには「球の半径」と「接触面までの距離」の小さいほうを取ればよい。
-      ただし <code>Math.min</code> をそのまま使うと、境目に<b>鋭い角</b>ができます。
-      実物の団子には角がありません。わずかに丸い土手ができて、そこに細い影の線が入ります。
+      天ぷらの衣はパン粉とまったく違います。小麦粉を水で溶いた薄い衣が、油の中ではじけて固まったものです。
+      うどん.js の先頭には、こう書いてあります。
+    </p>
+    <div class="note">
+      <b>「天ぷらは『揚げ色の幅』と『花』。衣を一色で塗ると、形をどれだけ作り込んでも発泡スチロールになる。
+      花（はじけた薄い衣）が本体から独立して突き出していて、その先が白く飛んでいる——これが揚げ物」</b>
+    </div>
+    <p>
+      天ぷら.js の衣は2段で作っています。まず、身の表面から法線の向きに衣の殻を張ります。
+      殻の厚みは一定ではなく、2枚のノイズで場所ごとに変えています。
+      次に、厚い所を選んで小さな泡（<code>blob</code>）と薄い花びら（<code>crispyFlake</code>）を生やします。
+      花はテクスチャに描いた模様ではなく、<b>本体から突き出した実体</b>です（09章と同じ考え方です）。
     </p>
     <figure>
-<pre><span class="c">// 多項式スムーズ最小値。k のぶんだけ、境目が丸くつながる</span>
-<span class="k">const</span> smin = (a, b, k) =&gt; {
-    <span class="k">const</span> h = Math.max(<span class="n">0</span>, k - Math.abs(a - b)) / k;
-    <span class="k">return</span> Math.min(a, b) - h * h * k * <span class="n">0.25</span>;
-};</pre>
-      <figcaption>この1行が、硬い球とやわらかい餅を分ける</figcaption>
+<pre><span class="c">// 衣の殻の厚み。2枚のノイズで場所ごとに変える</span>
+KT = th0 * cover * (<span class="n">1</span> + l1 * <span class="n">1.15</span> + l2 * <span class="n">0.85</span>) + <span class="n">0.012</span>;
+
+<span class="c">// 花を生やす。薄い所・下を向いた面・器の底の近くには生やさない</span>
+<span class="k">if</span> (t &lt; th0 * <span class="n">0.55</span>) <span class="k">continue</span>;
+<span class="k">if</span> (BN[k + <span class="n">1</span>] &lt; -<span class="n">0.30</span>) <span class="k">continue</span>;      <span class="c">// 法線の Y が -0.30 未満</span>
+size &lt; <span class="n">0.22</span> ? blob(...) : crispyFlake(...);</pre>
+      <figcaption>天ぷら.js の koromoShell。下を向いた面に花が無いのは、揚げているあいだ衣が垂れるから</figcaption>
     </figure>
 
-    <h3>串は、団子の中心を通っていない</h3>
+    <h3>揚げ色の向きが、衣によって逆になる</h3>
     <p>
-      花見団子は同じ問題を、別の向きで扱っています。
-      串の方向に押しつぶされ、隣と接する両端が平らになる。
-      直径 3.0cm に対して串方向は約 2.4cm、接触面の直径は約 1.2cm。
-      さらに、
+      12章で、焼き色は形と相関すると説明しました。揚げ色も同じです。ただし<b>相関の向き</b>が、衣によって逆になります。
     </p>
-    <ul>
-      <li>串の入口は生地が引き込まれて<b>すり鉢状にへこむ</b>（平らだと刺さって見えない）</li>
-      <li>団子は串の<b>中心に乗っていない</b>。わずかに偏心している</li>
-      <li>隣どうしは「めり込む」のではなく、<b>平らな面が触れて細い影の線</b>ができる</li>
-    </ul>
+    <table>
+      <tr><th>衣</th><th>濃くなる所</th><th>淡くなる所</th><th>コードの書き方</th></tr>
+      <tr><td>パン粉（とんかつ・コロッケ）</td><td>出っぱった破片の先</td><td>くぼみ・破片のすき間</td><td>とんかつ.js の <code>C_DARK</code> に「あめ色（出っ張った破片の先）」、<code>C_PALE</code> に「くぼみ・生のパン粉が残った所」</td></tr>
+      <tr><td>天ぷら</td><td>衣の薄い谷</td><td>衣が厚い所・花の先</td><td>天ぷら.js は厚みを正規化した値で <code>DEEP → BASE → PALE</code> を引く。<code>KOROMO_PALE</code> は「花の先。ほとんど白い」</td></tr>
+    </table>
     <p>
-      どれも数ミリの話です。ところが、この数ミリを入れるかどうかで、
-      「色つきの球に棒」か「団子」かが決まります。
+      パン粉の破片の先は薄くて油の中に突き出しているので、そこから先に色がつきます。
+      コロッケ.js にも「破片の先端ほど揚がって赤みが強く、破片のすき間（奥）は淡い黄金色」とあります。
+      天ぷら.js はその逆で、衣が厚い所ほど白く、薄い所ほど濃い色にしています。
+      どちらも「形から色を決める」点は同じです。
+      揚げ物を1本書いて、その揚げ色の式をもう一方の衣にそのまま流用すると、向きが逆なので失敗します。
+    </p>
+
+    <h3>断面が主役になる</h3>
+    <p>
+      とんかつは切って出す料理です。とんかつ.js の要点の1番目は<b>「断面が主役」</b>で、
+      パン粉の層（外は濃く内は白い）、バッターの細い線、脂の白い帯、肉、という4層が
+      3〜4mm の中に詰まっています。切り口は包丁が通った面なので平らで、
+      ぎざぎざなのは衣の縁の数mmだけです。
+    </p>
+    <p>
+      13章で、切り身は「表面」ではなく「切り口」だと説明しました。とんかつでも同じことが言えます。
+      切り口の肉には、筋に直交して切った繊維の断口が細かい斑点になって見えます。
+      とんかつ.js には「等方な網目を主役にして明るく出すと、断面が『白い落書き』に見える」という記録があり、
+      網目は細く淡くし、斑点を主にしています。
+      コロッケ.js と<a href="https://cx20.github.io/VirtualSweetsFactory/view.html?f=%E3%81%9F%E3%81%84%E7%84%BC%E3%81%8D.js" title="姉妹編「おかしのつくりかた」のソース">たい焼き.js</a> も、割った断面（じゃがいもとひき肉、生地とつぶあん）を同じ関数の中で作っています。
     </p>
     <div class="trap">
       <span class="label">つまずきポイント</span>
-      <p><b>潰す方向を1つに決めないでください。</b>
-      下の段の団子は、下から（台）・横から（隣）・上から（上の段）の3方向に押されています。
-      「上下だけ潰す」と、上から見たときに真円のままなので嘘が見えます。
-      月見団子.js は接触を全部集めてから、方向ごとに半径を決めています。</p>
-      <p><b>体積を戻しすぎると、風船になります。</b>
-      係数 0.33 は「戻しすぎない」ための値です。実際の餅は多少水分が逃げるので、
-      きっちり保存するより少なめのほうが自然に見えます。</p>
+      <p><b>揚げたパン粉は、思っているより光りません。</b>
+      とんかつ.js の【対策】：「0.24〜0.58 では滑らかすぎる。揚げたパン粉は実測でおおむね 0.6〜0.85 のつや消し。油だまりでも 0.5 止まり」。
+      油で光らせたくなりますが、粗さを下げると濡れたプラスチックになります。
+      照りは全面に均一ではなく、<b>くぼみ（油が溜まる所）だけ少し滑らかに</b>します。</p>
+      <p><b>色・粗さ・凹凸の3枚は、同じ高さ場から作ります。</b>
+      「3枚を別々のノイズで作ると、粒の位置がずれて『ざらざらの上にぼんやりした汚れが乗った』ように見える」（とんかつ.js）。
+      06章の3枚のテクスチャは、1つの高さ場から一緒に焼きます。</p>
+      <p><b>淡い色を広く置かない。</b>
+      エビフライ.js は、参考写真から測った色を「いちばん淡い所でもうきつね色」の範囲に寄せています。
+      淡い色を広く置くと、粉を吹いたパンに見えるからです。</p>
     </div>
 
     <div class="try">
       <span class="label">やってみよう</span>
       <ol>
-        <li>3つのスイッチを全部切って、球の山に戻してみる。</li>
-        <li>「減った体積を戻す」だけを入れて、シルエットがどう変わるか見る。</li>
-        <li>潰し量を 0.6 にすると、どこから餅でなくなるか探す。</li>
-        <li>月見団子.js で smin を検索し、k の値がいくつになっているか調べる。</li>
+        <li>「等方ノイズ」と「パン粉」を切り替えて、どこで見分けがつくか（輪郭、上面、影）を言葉にする。</li>
+        <li>パン粉のまま「揚げ色を形と結びつける」を切り、柄の付いた布に見えることを確かめる。</li>
+        <li>天ぷらで花の量を 0 にして、衣が発泡スチロールに見えるか確かめる。</li>
+        <li>とんかつ.js で「C_DARK」を、天ぷら.js で「KOROMO_PALE」を検索し、揚げ色の向きが逆になっている行を探す。</li>
       </ol>
     </div>
 
   </div>
 </section>
   <div class="pager">
-    <a class="prev" href="ch15.html"><span class="dir">← まえの章</span><span class="ttl">15 粒を1400個置いて、谷を暗くする</span></a>
-    <a class="next" href="ch17.html"><span class="dir">つぎの章 →</span><span class="ttl">17 「似ているのに別物」を作り分ける</span></a>
+    <a class="prev" href="ch15.html"><span class="dir">← まえの章</span><span class="ttl">15 「似ているのに別物」を作り分ける</span></a>
+    <a class="next" href="ch17.html"><span class="dir">つぎの章 →</span><span class="ttl">17 麺は、手で並べると籠になる</span></a>
   </div>
 </div>
 </main>

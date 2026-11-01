@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>たれは、色ではなく層 — たべもののつくりかた</title>
-<meta name="description" content="たれは、色ではなく層">
+<title>透けないと、食べ物に見えない — たべもののつくりかた</title>
+<meta name="description" content="透けないと、食べ物に見えない">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/labs.js" defer></script>
 </head>
@@ -27,15 +27,13 @@
       <a href="ch10.html">10 曲がり</a>
       <a href="ch11.html">11 光</a>
       <a href="ch12.html">12 焼き色</a>
-      <a href="ch13.html" aria-current="page">13 たれ</a>
-      <a href="ch14.html">14 透け</a>
-      <a href="ch15.html">15 粒</a>
-      <a href="ch16.html">16 潰れ</a>
-      <a href="ch17.html">17 差分</a>
-      <a href="ch18.html">18 衣</a>
-      <a href="ch19.html">19 麺</a>
-      <a href="ch20.html">20 汁</a>
-      <a href="ch21.html">21 盛る</a>
+      <a href="ch13.html" aria-current="page">13 透け</a>
+      <a href="ch14.html">14 粒</a>
+      <a href="ch15.html">15 差分</a>
+      <a href="ch16.html">16 衣</a>
+      <a href="ch17.html">17 麺</a>
+      <a href="ch18.html">18 汁</a>
+      <a href="ch19.html">19 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -44,120 +42,137 @@
 </header>
 
 <main id="top" class="page">
-<div class="wrap" style="--ch:var(--p-sauce)">
+<div class="wrap" style="--ch:var(--p-sakura)">
   <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第13章</p>
-<section class="chapter" id="ch13" style="--ch:var(--p-sauce)">
+<section class="chapter" id="ch13" style="--ch:var(--p-sakura)">
   <div class="chapter-head">
-    <div class="chnum">13<small>Glaze</small></div>
+    <div class="chnum">13<small>Translucency</small></div>
     <div>
-      <h2>たれは、色ではなく層</h2>
-      <p class="sub">absorption — 厚みが色を決める</p>
+      <h2>透けないと、食べ物に見えない</h2>
+      <p class="sub">subsurface scattering — 光が中に入って散る</p>
     </div>
   </div>
   <div class="body">
     <div class="recap">
       <span class="label">この章の3行まとめ</span>
       <ul>
-        <li>たれを茶色い<b>色として塗る</b>と、光沢のない茶色い卵になります。</li>
-        <li>実物のたれは<b>透明な層</b>で、厚いところほど濃い。色は厚みの結果です。</li>
-        <li>しかも<b>実体</b>です。垂れの輪郭・縁の厚み・たまりの膨らみがシルエットに出ます。</li>
+        <li>団子の透けを切ると<b>石膏</b>に、赤身の透けを切ると<b>赤く塗った消しゴム</b>になります。</li>
+        <li>光は表面で全部はね返るのではなく、中に入って散ってから出てきます。</li>
+        <li>薄いところほど多く抜けるので、<b>厚みの情報</b>を持たせるのが要点です。</li>
       </ul>
     </div>
 
     <p>
-      みたらし団子を作ります。飴色のたれを、アルベド（素の色）に茶色として塗る。
-      これが最初の版でした。花見団子.js の作り直しの記録に、こうあります。
+      食べ物のほとんどは、多かれ少なかれ光を通します。
+      上新粉の生地、白玉、マグロの赤身、大根おろし、レモン、米粒、鮭の身。
+      光が表面で全部はね返るのは金属だけで、
+      食べ物では<b>いったん中に入り、何度か散らばってから、別のところから出てきます</b>。
+      これを subsurface scattering（表面下散乱、SSS）といいます。
     </p>
-    <div class="note">
-      <b>「たれは『色』ではなく『透明な層』。飴色を albedo に塗ると、光沢の無い茶色い卵になる。
-      クリアコートの着色（吸収）で持たせると、薄い所は淡い琥珀、
-      厚い所は黒に近い赤褐色へ自然に分かれる」</b>
-    </div>
     <p>
-      透明なものを光が通ると、進んだ距離に応じて吸収されます。これがランベルト・ベールの法則で、
-      残る光の量は <code>exp(−吸収係数 × 厚み)</code> です。
-      吸収係数を赤・緑・青で別々にすると、<b>厚みが変わるだけで色が変わります</b>。
-      たこ焼きのソースなら、単位厚みあたりの吸収が RGB で <code>[1.5, 3.2, 5.4]</code>。
-      青がいちばん吸われるので、薄いところは橙、厚いところは黒に近い赤褐色になります。
+      これが見た目にどう出るかというと、<b>逆光になったときの縁</b>です。
+      光を後ろから当てると、薄い部分だけが明るく透けます。
+      団子の輪郭がふわっと白く光り、赤身の縁が赤く抜ける。
+      料理写真が斜め後ろから光を当てるのは、これを見せるためです（→ <a href="ch11.html">11章</a>）。
     </p>
-    <figure>
-<pre><span class="c">// 5. TextureLab : ソースの色は「塗る」のではなく「解く」</span>
-<span class="k">const</span> EXT = [<span class="n">1.5</span>, <span class="n">3.2</span>, <span class="n">5.4</span>];   <span class="c">// 単位厚みあたりの吸収（RGB）</span>
-<span class="k">const</span> t = thickness(u, v);       <span class="c">// その場所のソースの厚み</span>
-<span class="k">for</span> (<span class="k">let</span> c = <span class="n">0</span>; c &lt; <span class="n">3</span>; c++) {
-    <span class="c">// 下地の色に、通った距離ぶんの吸収を掛ける</span>
-    out[c] = base[c] * Math.exp(-EXT[c] * t);
-}</pre>
-      <figcaption>たこ焼き.js。Babylon のクリアコート着色は薄いところで数値的に破綻するので、CPU で解いて焼く</figcaption>
-    </figure>
 
-    <div class="lab" id="lab13">
-      <p class="lab-title">実験 — 塗る / 層として解く</p>
+    <div class="lab" id="lab14">
+      <p class="lab-title">実験 — 透けを切る / 光を後ろへ回す</p>
       <div class="lab-cols side">
         <div class="controls">
-          <label class="switch"><input type="checkbox" id="glazePaint">アルベドに茶色を塗る（昔の版）</label>
-          <div class="ctrl">
-            <label for="glazeThick">たれの厚み<span class="v" id="glazeThickV">0.45</span></label>
-            <input type="range" id="glazeThick" min="0" max="1" step="0.01" value="0.45">
+          <div class="chips" id="sssPreset">
+            <button class="chip" type="button" data-v="dango" aria-pressed="true">白玉</button>
+            <button class="chip" type="button" data-v="akami">赤身</button>
+            <button class="chip" type="button" data-v="rice">米粒</button>
           </div>
           <div class="ctrl">
-            <label for="glazeCover">掛かる範囲<span class="v" id="glazeCoverV">0.62</span></label>
-            <input type="range" id="glazeCover" min="0" max="1" step="0.01" value="0.62">
+            <label for="sssAmt">透けの強さ<span class="v" id="sssAmtV">0.45</span></label>
+            <input type="range" id="sssAmt" min="0" max="1" step="0.01" value="0.45">
           </div>
-          <label class="switch"><input type="checkbox" id="glazeBody" checked>厚みを形にも出す</label>
-          <div class="readout" id="glazeOut">—</div>
+          <div class="ctrl">
+            <label for="sssBack">光の向き（逆光へ）<span class="v" id="sssBackV">40°</span></label>
+            <input type="range" id="sssBack" min="-30" max="160" step="1" value="40">
+          </div>
+          <div class="readout" id="sssOut">—</div>
         </div>
-        <canvas id="glazeCanvas" width="640" height="360" aria-label="みたらしのたれを層として解く実験"></canvas>
+        <canvas id="sssCanvas" width="640" height="360" aria-label="透けの強さと光の向きを変える実験"></canvas>
       </div>
       <p class="hint">
-        「塗る」に切り替えると、厚みを変えても色が変わりません。
-        だから、いくら濃くしても「濃い茶色に塗ったもの」にしか見えなくなります。
+        透けを 0 にすると、光をどこから当てても縁が抜けません。
+        白玉が石膏に、赤身が消しゴムに見えるのはそのためです。<br><b>立体はドラッグで回せます</b>（触ると自動回転は止まります。ダブルクリックで戻ります）。
+        光を後ろへ回してから立体も回すと、抜けて見える向きが探せます。
       </p>
     </div>
 
-    <h3>たれは全面を覆わない</h3>
+    <h3>厚みを、どうやって知るか</h3>
     <p>
-      上から掛けたたれは、下へ流れて、途中で止まります。止まった線から下は、
-      白い生地が出たままです。<b>全面を覆うと、たれではなくコーティングになります</b>。
-      たこ焼きのソースも同じで、垂れの輪郭がシルエットに出て初めてソースになる。
-      アルベドに茶色を描くだけだと、ハイライトが玉全体で一様のままなので、印刷したように見えます。
+      「薄いところほど透ける」を実装するには、その点の<b>厚み</b>が必要です。
+      ところが3Dの表面には厚みの情報がありません。そこで、あらかじめ計算して
+      テクスチャに焼いておきます。これを thickness テクスチャといいます。
+    </p>
+    <figure>
+<pre><span class="c">// 3. TextureLab : 厚みを焼く（ご飯.js の米粒）
+// 米粒は中心が厚く、縁と両端が薄い。単純な形なら式で書ける</span>
+<span class="k">const</span> th = Math.sqrt(Math.max(<span class="n">0</span>, <span class="n">1</span> - rr)) * (<span class="n">1</span> - <span class="n">0.35</span> * endFade);
+mat.subSurface.thicknessTexture = bake(th);
+mat.subSurface.isTranslucencyEnabled = <span class="k">true</span>;
+mat.subSurface.translucencyIntensity = <span class="n">0.45</span>;</pre>
+      <figcaption>形が複雑な場合は、内側へレイを飛ばして距離を測る方法もある</figcaption>
+    </figure>
+
+    <h3>散る色は、素の色とは違う</h3>
+    <p>
+      中を通ってきた光は、素の色そのままでは出てきません。
+      赤身なら、より赤く、より暗く。白玉なら、わずかに黄味を帯びて。
+      だから SSS には、アルベドとは別に<b>散乱の色（tint）</b>を持たせます。
+    </p>
+    <p>
+      お寿司.js の赤身は、この色を <code>[0.560, 0.088, 0.098]</code>（深い深紅）に取っています。
+      表面の色より濃い。「光を通すと明るくなる」のではなく、
+      <b>光を通すと、その材質の色が濃く出る</b>のが正しい方向です。
     </p>
 
-    <h3>液体の面は、下の肌理を埋める</h3>
+    <h3>切り身は「表面」ではなく「切り口」</h3>
     <p>
-      これも見落としやすい点です。生地の表面はざらざらしていますが、
-      その上をたれが流れると、<b>細かい凹凸は埋まって平らになります</b>。
-      たれの上を粗いままにしておくと、たれではなく「茶色い塗装」になります。
-      13章でやることは、結局この3つに集約されます。
+      お寿司.js のコメントに、この章と関係の深い一節があります。
     </p>
-    <ul>
-      <li>色は<b>厚みから解く</b>（吸収）</li>
-      <li>厚みを<b>形にも出す</b>（縁の盛り上がり、たまりの膨らみ）</li>
-      <li>たれの下の<b>粗さと法線を上書きする</b>（平らにする）</li>
-    </ul>
-
-    <h3>艶にも、ムラが要る</h3>
+    <div class="note">
+      <b>「見えているのは『表面』ではなく『包丁で切った断面』。
+      模様は表面の汚れではなく、筋肉の束と脂の層が切られた切り口」</b>
+    </div>
     <p>
-      たれを一様に光らせると、プラスチックの成型品になります。
-      たこ焼き.js のコメント：<b>「乾きかけた縁はざらつき、たまりだけが鏡になる」</b>。
-      同じソースの中で、粗さが場所ごとに違う。
-      07章で「粗さは1つの数値ではなく1枚の画像」と言ったのは、ここに効いてきます。
+      野菜の皮や、たこ焼きの生地は<b>外側</b>です。ところが刺身や鮭の切り身は、
+      内部構造がむき出しになっています。だから模様の作り方が変わります。
+      筋肉の束（筋節）が斜めに走る場を作り、それを切った断面を模様にする。
+      鮭の白い筋（ミオコンマ）が「く」の字に並ぶのは、そのためです。
+      <a href="https://cx20.github.io/VirtualSweetsFactory/view.html?f=%E3%83%AD%E3%83%BC%E3%83%AB%E3%82%B1%E3%83%BC%E3%82%AD.js" title="姉妹編「おかしのつくりかた」のソース">ロールケーキ.js</a> も同じ考え方で、断面の渦巻きを「線」ではなく、生地とクリームを巻いた「シート」の切り口として作っています。
+      渦の形は1つの断面関数にまとめ、テクスチャと形状の両方がそれを引きます。
     </p>
     <div class="trap">
       <span class="label">つまずきポイント</span>
-      <p><b>クリアコートの着色は、厚み 0 のところで壊れます。</b>
-      Babylon.js のクリアコート着色は、浅い入射角と厚み 0 の組み合わせで数値的に破綻します。
-      団子シリーズ4本とも、着色をエンジンに任せず<b>CPU で吸収を解いてテクスチャに焼く</b>方針をとっています。
-      「エンジンの機能があるから使う」ではなく、壊れない側を選ぶ、という判断です。</p>
+      <p><b>霜降りは色ではなく実体です。</b>
+      アルベドに白い線を描いただけだと、印刷したステッカーになります。
+      脂は肉より白く、やわらかく、<b>わずかに盛り上がって光る</b>。
+      法線と粗さも一緒に変えないと霜降りになりません。</p>
+      <p><b>透けを強くしすぎると、光る風船になります。</b>
+      subSurface は「ぼんやり光る」ので、上げるほど良く見えがちです。
+      最初の14本の値は、身のあるもので 0.4〜0.7（赤身 0.55 / 中トロ 0.62 / 大トロ 0.70、
+      団子は白玉 0.52 / 桜 0.55 / 白 0.62、ご飯 0.45）。削り節やひれのように「透けて当然」の薄いものでも 0.85 止まりで、
+      1.0 に近い値はどこにもありません。</p>
+      <p><b>translucency は「透けを足す強さ」ではありません。</b>
+      カレー.js の修正記録：「Babylon 8 系のこの値は『透けを足す強さ』ではなく拡散反射との配分比で、
+      diffuse *= (1 - t) が掛かる。拡散の4割を捨てていた」。
+      米粒の translucency を 0.40 にしていたので、ライスがそのぶん暗く沈んでいました（0.26 に直しています）。
+      チャーハン.js は、炒めて水が飛んだ米は炊きたてより透けないとして、さらに 0.16 まで下げています。</p>
     </div>
 
     <div class="try">
       <span class="label">やってみよう</span>
       <ol>
-        <li>「塗る」に切り替えて厚みを動かし、色が変わらないことを確かめる。</li>
-        <li>層のまま厚みを 1.0 にして、いちばん厚い所が何色になるか見る。</li>
-        <li>「厚みを形にも出す」を切り、シルエットの違いを見比べる。</li>
-        <li>花見団子.js で「たれ」を検索し、たれが止まる線をどう決めているか読む。</li>
+        <li>「白玉」で透けを 0 にして、何に見えるか言葉にする。</li>
+        <li>光の向きを 160°（真後ろ）にして、透けの有無を見比べる。</li>
+        <li>「赤身」で透けを 1.0 にすると、どこから食べ物でなくなるか探す。</li>
+        <li>お寿司.js で「透」を検索し、赤身・中トロ・大トロで値がどう違うか比べる。</li>
       </ol>
     </div>
 
@@ -165,7 +180,7 @@
 </section>
   <div class="pager">
     <a class="prev" href="ch12.html"><span class="dir">← まえの章</span><span class="ttl">12 焼き色は、形と相関している</span></a>
-    <a class="next" href="ch14.html"><span class="dir">つぎの章 →</span><span class="ttl">14 透けないと、食べ物に見えない</span></a>
+    <a class="next" href="ch14.html"><span class="dir">つぎの章 →</span><span class="ttl">14 粒を1400個置いて、谷を暗くする</span></a>
   </div>
 </div>
 </main>

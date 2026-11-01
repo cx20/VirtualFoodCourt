@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>粒を1400個置いて、谷を暗くする — たべもののつくりかた</title>
-<meta name="description" content="粒を1400個置いて、谷を暗くする">
+<title>「似ているのに別物」を作り分ける — たべもののつくりかた</title>
+<meta name="description" content="「似ているのに別物」を作り分ける">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/labs.js" defer></script>
 </head>
@@ -27,15 +27,13 @@
       <a href="ch10.html">10 曲がり</a>
       <a href="ch11.html">11 光</a>
       <a href="ch12.html">12 焼き色</a>
-      <a href="ch13.html">13 たれ</a>
-      <a href="ch14.html">14 透け</a>
-      <a href="ch15.html" aria-current="page">15 粒</a>
-      <a href="ch16.html">16 潰れ</a>
-      <a href="ch17.html">17 差分</a>
-      <a href="ch18.html">18 衣</a>
-      <a href="ch19.html">19 麺</a>
-      <a href="ch20.html">20 汁</a>
-      <a href="ch21.html">21 盛る</a>
+      <a href="ch13.html">13 透け</a>
+      <a href="ch14.html">14 粒</a>
+      <a href="ch15.html" aria-current="page">15 差分</a>
+      <a href="ch16.html">16 衣</a>
+      <a href="ch17.html">17 麺</a>
+      <a href="ch18.html">18 汁</a>
+      <a href="ch19.html">19 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -44,148 +42,151 @@
 </header>
 
 <main id="top" class="page">
-<div class="wrap" style="--ch:var(--p-gin)">
+<div class="wrap" style="--ch:var(--p-akami)">
   <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第15章</p>
-<section class="chapter" id="ch15" style="--ch:var(--p-gin)">
+<section class="chapter" id="ch15" style="--ch:var(--p-akami)">
   <div class="chapter-head">
-    <div class="chnum">15<small>Grains</small></div>
+    <div class="chnum">15<small>Variants</small></div>
     <div>
-      <h2>粒を1400個置いて、谷を暗くする</h2>
-      <p class="sub">baked ambient occlusion — 擬似AOの焼き込み</p>
+      <h2>「似ているのに別物」を作り分ける</h2>
+      <p class="sub">variants — 差分でつくるという設計</p>
     </div>
   </div>
   <div class="body">
     <div class="recap">
       <span class="label">この章の3行まとめ</span>
       <ul>
-        <li>茶碗一杯のごはんは、<b>約1400粒</b>を1粒ずつ置いて作っています。</li>
-        <li>説得力を決めるのは粒の形ではなく、<b>粒と粒のあいだの暗がり</b>です。</li>
-        <li>その暗がりは <b>SSAO では出ません</b>。配置するときに計算して焼き込みます。</li>
+        <li>トーストとエッグトーストは、<b>同じプログラム</b>です。差分は数か所しかありません。</li>
+        <li>サンマと鮭も、団子3種も、チョコ8種も同じ骨格から作られています。</li>
+        <li>ただし<b>色を変えただけでは別物になりません</b>。何を変えると別物になるかが本題です。</li>
       </ul>
     </div>
 
     <p>
-      ごはんを描くとき、いちばん難しいのは1粒の形ではありません。
-      1粒だけを取り出すと、どのやり方でもそれなりに見えます。
-      難しいのは<b>集まったとき</b>で、粒間の暗がりが無いと、
-      ごはんは「発泡スチロールの塊」になります。
+      30本のうち、いくつかは兄弟です。最初の14本では、こういう組がありました。
     </p>
+    <table>
+      <tr><th>組</th><th>共有しているもの</th><th>差分</th></tr>
+      <tr><td>トースト / エッグトースト</td><td>スライスの SDF・す（気泡）・耳・焦げ・皿</td><td>上面のくぼみ、卵、焼き分け</td></tr>
+      <tr><td>ご飯 / お寿司</td><td>米粒の形・マテリアル・粒間の暗がり</td><td>盛りの形（山 → 俵）、締め具合、ネタ</td></tr>
+      <tr><td>焼き魚（サンマ）/（鮭）</td><td>掃引・体表テクスチャ・皿・付け合わせ</td><td>一尾か切り身か、銀か橙か、筋節の場</td></tr>
+      <tr><td>花見団子 / 月見団子</td><td>生地の透過・法線の規約・影・被写界深度</td><td>串か積むか、たれの有無、接触の向き</td></tr>
+      <tr><td>クッキー（7種）/ チョコ（8種）</td><td>断面・焼き色・皿・物理</td><td>外形、厚み、トッピング、艶</td></tr>
+    </table>
     <p>
-      ふつう、こういう陰りは <b>SSAO</b>（画面空間アンビエントオクルージョン）という
-      後処理で付けます。ところが、ご飯.js はそれを使いません。理由がコメントに書いてあります。
+      あとから加わった22本は、もっと長い系譜になっています。ファイルの先頭に「〜からの派生」と書いてあるものを並べると、こうなります。
     </p>
-    <div class="note">
-      <b>「SSAO が拾えるのは画面空間で隣接している面の陰りだけで、
-      ごはんの谷は深さ数ミリ・幅数ミリの密集した溝なので、
-      半径を合わせると今度は粒の輪郭が全部汚れる」</b>
-    </div>
+    <table>
+      <tr><th>系譜</th><th>引き継いだもの</th><th>作り直したもの</th></tr>
+      <tr><td>うどん → そば → ラーメン</td><td>麺の芯線・緩和・掃引、半透明のつゆ、箸でつかんだ束</td><td>麺の太さと角・色・星、器、スープの油滴、具</td></tr>
+      <tr><td>ナポリタン → トマトソース → カルボナーラ / 焼きそば</td><td>麺の掃引・押し合い・遮蔽</td><td>麺の色、盛り（渦か山か）、ソースが乗るか絡むか、縮れ</td></tr>
+      <tr><td>ご飯 → カレー → チャーハン</td><td>米粒の形とマテリアル、照明比（rice-H の結論）</td><td>ルウ、粒ごとの色の分散と向き</td></tr>
+      <tr><td>天ぷら → うどん・そばの天ぷら</td><td>えびの寸法、衣の殻と花</td><td>丼の上での大きさ、つゆ面より下に花を生やさない</td></tr>
+      <tr><td>エビフライ → コロッケ</td><td>パン粉の衣、千切りキャベツ、プチトマト</td><td>小判型の本体、割った断面</td></tr>
+      <tr><td>生姜焼き → 焼きそばの豚肉</td><td>しわの寄った薄切り肉、たれの膜</td><td>麺の中に半分埋める置き方</td></tr>
+    </table>
     <p>
-      そこで別の手を使います。粒を配置するときに、
-      <b>その粒が近傍の最高点からどれだけ沈んでいるか</b>を計算し、
-      その値をインスタンスの色として書き込む。沈んでいる粒ほど暗い色を持たせるわけです。
-      描画時のコストはゼロで、しかも粒の形に沿って正確に暗くなります。
+      共有しているほうが多い。これは偶然ではなく、
+      <b>01章で見た層構造がそうなっているから</b>です。
+      下の層（乱数・ノイズ・メッシュの道具）は料理を知らないので、そのまま使い回せます。
     </p>
-    <figure>
-<pre><span class="c">// 9. Grains : 配置と「粒間の暗がり」の焼き込み</span>
-<span class="k">const</span> hi = neighborMaxHeight(x, z);        <span class="c">// 近傍でいちばん高い粒の頭</span>
-<span class="k">const</span> sink = clamp((hi - y) / depth, <span class="n">0</span>, <span class="n">1</span>); <span class="c">// どれだけ沈んでいるか</span>
-<span class="k">const</span> k = mix(<span class="n">1.0</span>, aoFloor, sink);          <span class="c">// aoFloor = いちばん深い谷の明るさ</span>
-colors.push(k, k, k, <span class="n">1</span>);                    <span class="c">// インスタンスカラーへ</span></pre>
-      <figcaption>ご飯.js。GUI の「粒間の暗がり」スライダーは aoFloor を動かしている</figcaption>
-    </figure>
 
-    <div class="lab" id="lab15">
-      <p class="lab-title">実験 — 粒間の暗がりを、切る / 入れる</p>
+    <div class="lab" id="lab17">
+      <p class="lab-title">実験 — トーストをエッグトーストにする</p>
       <div class="lab-cols side">
         <div class="controls">
-          <div class="ctrl">
-            <label for="grainN">粒の数<span class="v" id="grainNV">420</span></label>
-            <input type="range" id="grainN" min="60" max="900" step="20" value="420">
-          </div>
-          <div class="ctrl">
-            <label for="grainAo">いちばん深い谷の明るさ<span class="v" id="grainAoV">0.52</span></label>
-            <input type="range" id="grainAo" min="0.1" max="1" step="0.01" value="0.52">
-          </div>
-          <div class="ctrl">
-            <label for="grainDepth">暗がりの届く深さ<span class="v" id="grainDepthV">0.55</span></label>
-            <input type="range" id="grainDepth" min="0.1" max="1.5" step="0.01" value="0.55">
-          </div>
-          <div class="readout" id="grainOut">—</div>
+          <label class="switch"><input type="checkbox" id="diffWell">上面にくぼみを彫る</label>
+          <label class="switch"><input type="checkbox" id="diffEgg">卵を落とす</label>
+          <label class="switch"><input type="checkbox" id="diffBake">くぼみの中だけ焼きを弱める</label>
+          <label class="switch"><input type="checkbox" id="diffGloss">白身と黄身で艶を変える</label>
+          <div class="readout" id="diffOut">—</div>
         </div>
-        <canvas id="grainCanvas" width="640" height="360" aria-label="米粒の集まりと粒間の暗がりの実験"></canvas>
+        <canvas id="diffCanvas" width="640" height="360" aria-label="トーストからエッグトーストへの差分の実験"></canvas>
       </div>
       <p class="hint">
-        谷の明るさを 1.0 にすると暗がりが消えます。粒の形も数も同じなのに、
-        急にごはんに見えなくなるのが分かります。
+        「卵を落とす」だけを入れると、トーストの上に黄色い円が乗ります。
+        4つ全部を入れて初めてエッグトーストになります。
       </p>
     </div>
 
-    <h3>近傍の「最高点」を使う理由</h3>
+    <h3>色だけを変えても、別物にはならない</h3>
     <p>
-      沈み具合を測るとき、近傍の<b>平均</b>の高さと比べるとうまくいきません。
-      ご飯.js のコメントに「最高点と同じ高さになり、暗がりがまったく出ない」という
-      注意が残っています。平均と比べると、山の粒も谷の粒も同じくらいの差になってしまうからです。
-      比べる相手は<b>いちばん高い粒</b>でなければいけません。
+      いちばんよくある勘違いがこれです。
+      サンマを橙色にしても鮭にはなりません。サンマは<b>一尾まるごとの側扁した筒</b>、
+      鮭は<b>包丁で切った切り身</b>です。見えている面の成り立ちからして違います。
+    </p>
+    <p>
+      逆に、形を変えなくても別物になる組み合わせもあります。
+      ご飯とお寿司のシャリがそれで、盛りの形と締め具合という2つの数値だけで、
+      「ふんわり盛った白飯」と「握って締めた酢飯」に分かれます。
     </p>
 
-    <h3>握ると、沈み込みが浅くなる</h3>
+    <h3>差分にすると、直しが全部に効く</h3>
     <p>
-      お寿司.js は、ご飯.js の米粒・マテリアル・暗がりの焼き込みを<b>そのまま流用</b>しています。
-      変わるのは盛りの形（茶碗の山 → 俵）だけ……ではありません。
-      酢飯は握って締めるので、<b>粒の沈み込みが浅くなります</b>。
-      同じ仕組みのまま、パラメータ1つで「ふんわり」と「締まっている」を作り分けています。
-      この考え方は<a href="ch17.html">17章</a>につながります。
+      設計としての利点はここです。
+      法線マップの V の符号を間違えていたことに気づいたとします。
+      30本に同じ間違いが独立して書かれていたら、30か所直すことになります。
+      実際には、団子シリーズ4本のコメントに
+      <b>「法線マップの V の符号は (yd − yu)。Babylon の接空間は V が下向き」</b>
+      と同じ注意が書き写されています。<b>1本で分かったことが、次の1本に持ち越されている</b>。
+    </p>
+    <p>
+      ファイルの先頭を読み比べると、これがよく分かります。
+      「団子版（dango-C）から引き継いだもの」「サクランボ版から引き継いだもの」
+      「ごはん.js の続き」——30本は独立した作品ではなく、1本の連続した記録です。
     </p>
 
-    <h3>チャーハンは、黄色いごはんではない</h3>
+    <h3>プリセットという形の差分</h3>
     <p>
-      チャーハン.js は、ご飯.js の米粒をもとにしています。ところが、米粒をそのまま黄色く塗っても
-      「色を塗った白飯」にしかなりません。参考写真を拡大して数えると、違いは3つにまとまりました。
+      同じファイルの中の差分が<b>プリセット</b>です。
+      <a href="https://cx20.github.io/VirtualSweetsFactory/view.html?f=%E3%82%AF%E3%83%83%E3%82%AD%E3%83%BC.js" title="姉妹編「おかしのつくりかた」のソース">クッキー.js</a> は7種類（サブレ / 市松 / うずまき / チョコチップ / 型押しビスケット /
+      クラッカー / 絞り出し）を、断面と外形の数値だけで作り分けています。
     </p>
-    <ul>
-      <li><b>一粒ずつ色が違う。</b>白いまま残った粒、卵をまとった黄色い粒、醤油がついた褐色の粒が隣り合っている。
-      ただし完全なランダムではなく、数cm 単位でまとまっている（空間ノイズ 6割 + 粒ごとの乱数 4割）</li>
-      <li><b>粒の向きが揃わない。</b>炊いたごはんは盛りの面に沿って寝るが、炒めた飯は油ではがれて勝手な向きを向く。
-      ご飯.js の「面の法線に揃えてから ±0.26rad」をやめ、完全な乱数からごく弱く水平へ引き戻す（傾き σ = 0.95rad）</li>
-      <li><b>粒と粒のあいだに隙間がある。</b>ごはんは「谷が浅くて白い」、チャーハンは「谷が深くて暗い」</li>
-    </ul>
-    <p>
-      上の実験で谷の明るさを下げると、3つ目の「谷が深くて暗い」がどういう見え方か確かめられます。
-      平均の色が合っていても、<b>粒ごとの分散</b>が無いと、絵はただの黄色い塊になります。
-    </p>
-
-    <h3>1400 という数</h3>
-    <p>
-      茶碗一杯は実際には数千粒あります。1400 は、見た目が破綻しない下限として選ばれた数です。
-      表面から見えない粒は置かないので、実際には「表面から2〜3層ぶん」だけ配置しています。
-      中身は<b>盛りの形（Mound）</b>という1枚の曲面で塞いであり、粒はその上に生えています。
-    </p>
+    <figure>
+<pre><span class="c">// 0. CONFIG : 種類プリセット（クッキー.js）</span>
+sable: {
+    label: <span class="s">"サブレ"</span>, shape: <span class="s">"disc"</span>,
+    radius: <span class="n">2.55</span>, thickness: <span class="n">0.98</span>, dome: <span class="n">0.20</span>, rimBulge: <span class="n">0.88</span>,
+    crackAmt: <span class="n">0.30</span>, blister: <span class="n">0.0</span>, dockPitch: <span class="n">0</span>,
+    emboss: <span class="s">"none"</span>, sugarAmt: <span class="n">1.00</span>
+},</pre>
+      <figcaption>プリセットが増えても、下の層は1行も変わらない</figcaption>
+    </figure>
     <div class="trap">
       <span class="label">つまずきポイント</span>
-      <p><b>粒をランダムに置くだけでは、ごはんになりません。</b>
-      向きが完全にばらばらだと「もみ殻の山」に見えます。
-      実物は表面に沿って寝ている粒が多い。盛りの曲面の法線を使って、
-      粒の向きをある程度そちらへ倒しています。</p>
-      <p><b>インスタンスカラーは、ライティングの前に掛かります。</b>
-      焼き込んだ暗さは「その粒に届く光の量」を表しているので、
-      アルベドに掛けるのが正しい。あとから画面全体を暗くするのとは意味が違います。</p>
+      <p><b>乱数の幅は、料理ごとに変えなければいけません。</b>
+      <a href="https://cx20.github.io/VirtualSweetsFactory/view.html?f=%E3%82%AF%E3%83%83%E3%82%AD%E3%83%BC.js" title="姉妹編「おかしのつくりかた」のソース">クッキー.js</a> のコメント：「工業製品なので個体差が小さい。
+      形の乱数を野菜と同じ幅で振ると『手びねりの粘土』になる。
+      乱数は外形 ±6%、厚み ±10% までに抑え、代わりに焼きムラと反りで単調さを消す」。
+      骨格を共有するということは、<b>数値の意味まで共有する</b>ことではありません。</p>
     </div>
+
+    <h3>次の1本は、いちばん近いものから</h3>
+    <p>
+      新しい料理を作るときは、いちばん近いものをコピーして、CONFIG のプリセットを1つ足すところから始めます。
+      この章の初版では、15本目の題材として「おにぎり（ご飯 + 海苔）、ホットケーキ（クッキーの断面 + 焼き色）、
+      餃子（掃引 + ひだ）」を挙げていました。そのうち2つは、本当に餃子.js と<a href="https://cx20.github.io/VirtualSweetsFactory/view.html?f=%E3%83%91%E3%83%B3%E3%82%B1%E3%83%BC%E3%82%AD.js" title="姉妹編「おかしのつくりかた」のソース">パンケーキ.js</a> になりました。
+    </p>
+    <p>
+      上の表のとおり、増えた25本のほとんどはどれかの派生です。それでも、派生だけでは解けない難所が4つ出てきました。
+      衣、麺、汁、盛り付けです。それを扱うのが、次の<a href="ch16.html">第III部</a>です。
+    </p>
 
     <div class="try">
       <span class="label">やってみよう</span>
       <ol>
-        <li>谷の明るさを 1.0 にして、ごはんが何に見えるか判定する。</li>
-        <li>粒の数を 60 まで減らして、どこから「ごはん」でなくなるか探す。</li>
-        <li>暗がりの届く深さを 1.5 にして、暗すぎるとどうなるか見る。</li>
-        <li>ご飯.js の GUI で「粒間の暗がり」を 0 にした画面と見比べる。</li>
+        <li>上の実験を4つとも切った状態から、1つずつ入れて変化を記録する。</li>
+        <li>「卵を落とす」だけを入れた状態が、なぜエッグトーストに見えないか説明する。</li>
+        <li>トースト.js とエッグトースト.js を並べて開き、違う行を探す。</li>
+        <li>うどん.js・そば.js・ラーメン.js の先頭のコメントを読み比べ、それぞれ何を作り直したか1行ずつ書く。</li>
       </ol>
     </div>
 
   </div>
 </section>
   <div class="pager">
-    <a class="prev" href="ch14.html"><span class="dir">← まえの章</span><span class="ttl">14 透けないと、食べ物に見えない</span></a>
-    <a class="next" href="ch16.html"><span class="dir">つぎの章 →</span><span class="ttl">16 触れ合うと、潰れる</span></a>
+    <a class="prev" href="ch14.html"><span class="dir">← まえの章</span><span class="ttl">14 粒を1400個置いて、谷を暗くする</span></a>
+    <a class="next" href="ch16.html"><span class="dir">つぎの章 →</span><span class="ttl">16 衣は、粒ではなく板と泡</span></a>
   </div>
 </div>
 </main>
