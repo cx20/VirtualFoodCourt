@@ -27,15 +27,13 @@
       <a href="ch10.html">10 曲がり</a>
       <a href="ch11.html">11 光</a>
       <a href="ch12.html">12 焼き色</a>
-      <a href="ch13.html">13 たれ</a>
-      <a href="ch14.html">14 透け</a>
-      <a href="ch15.html">15 粒</a>
-      <a href="ch16.html">16 潰れ</a>
-      <a href="ch17.html">17 差分</a>
-      <a href="ch18.html">18 衣</a>
-      <a href="ch19.html">19 麺</a>
-      <a href="ch20.html">20 汁</a>
-      <a href="ch21.html">21 盛る</a>
+      <a href="ch13.html">13 透け</a>
+      <a href="ch14.html">14 粒</a>
+      <a href="ch15.html">15 差分</a>
+      <a href="ch16.html">16 衣</a>
+      <a href="ch17.html">17 麺</a>
+      <a href="ch18.html">18 汁</a>
+      <a href="ch19.html">19 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html" aria-current="page">用語</a>
@@ -81,20 +79,20 @@
       <tr><td>粗さ / roughness</td><td>表面のざらつき。0 で鏡、1 で完全なつや消し。</td></tr>
       <tr><td>PBR</td><td>現実の光の法則に沿った質感の表し方（<a href="ch07.html">07章</a>）。</td></tr>
       <tr><td>クリアコート</td><td>表面にかかった透明な膜。たれ・水の膜・チョコの艶。</td></tr>
-      <tr><td>SSS / subSurface</td><td>光が中に入って散る現象。薄い部分が透ける（<a href="ch14.html">14章</a>）。</td></tr>
+      <tr><td>SSS / subSurface</td><td>光が中に入って散る現象。薄い部分が透ける（<a href="ch13.html">13章</a>）。</td></tr>
       <tr><td>thickness テクスチャ</td><td>その点の厚みを焼いておいた画像。透け具合を決める。</td></tr>
       <tr><td>sheen</td><td>布のように、縁がふわっと光る反射。かつお節や大根おろし。</td></tr>
       <tr><td>iridescence / 虹彩</td><td>薄い膜の干渉で出る虹色。秋刀魚の銀は色素ではなくこれ。</td></tr>
       <tr><td>法線マップ</td><td>細かい凹凸を、頂点を増やさず法線だけで表す画像。</td></tr>
       <tr><td>視差 / parallax</td><td>法線マップより一歩進んで、見る角度で凹凸がずれて見える手法。</td></tr>
       <tr><td>メイラード反応</td><td>焼き色がつく化学反応。熱が届いた所ほど濃い（<a href="ch12.html">12章</a>）。</td></tr>
-      <tr><td>吸収 / extinction</td><td>透明なものを光が通るとき、距離に応じて減る量。たれの色を決める（<a href="ch13.html">13章</a>）。</td></tr>
+      <tr><td>吸収 / extinction</td><td>透明なものを光が通るとき、距離に応じて減る量。たれの色を決める（姉妹編の<a href="https://cx20.github.io/VirtualSweetsFactory/ch12.html">12章</a>）。</td></tr>
       <tr><td>AO / アンビエントオクルージョン</td><td>狭い所や谷が暗くなる効果。</td></tr>
       <tr><td>SSAO</td><td>画面上で隣り合う面から AO を推定する後処理。細かい谷には効かない。</td></tr>
       <tr><td>焼き込み / bake</td><td>実行時に計算せず、あらかじめ求めてテクスチャや頂点色に入れておくこと。</td></tr>
       <tr><td>インスタンス</td><td>同じ形を1個だけ作り、位置・向き・色を配って何百個も描く仕組み（<a href="ch09.html">09章</a>）。</td></tr>
       <tr><td>頂点カラー</td><td>頂点そのものが持つ色。唐揚げの揚げ色はこれで焼いてある。</td></tr>
-      <tr><td>smin</td><td>なめらかな最小値。角を作らずに2つの形をつなぐ（<a href="ch16.html">16章</a>）。</td></tr>
+      <tr><td>smin</td><td>なめらかな最小値。角を作らずに2つの形をつなぐ（姉妹編の<a href="https://cx20.github.io/VirtualSweetsFactory/ch13.html">13章</a>）。</td></tr>
       <tr><td>凸包 / convex hull</td><td>でっぱりだけを包んだ袋のような形。物理の当たり判定に使う。</td></tr>
       <tr><td>Havok</td><td>Babylon.js が使う物理エンジンの名前（<a href="ch08.html">08章</a>）。</td></tr>
       <tr><td>緩和 / relaxation</td><td>重なりを少しずつ押し離す反復計算。物理を使わない配置に使う。</td></tr>
@@ -112,16 +110,16 @@
       <tr><td>ギズモ</td><td>Inspector で選んだ物に出る、動かすための矢印や輪。</td></tr>
       <tr><td>ポストプロセス</td><td>描き終えた絵にあとから掛ける処理。Bloom（にじみ）や被写界深度（ぼけ）など（<a href="ch11.html">11章</a>）。</td></tr>
       <tr><td>照明比</td><td>いちばん明るい面と影の側の明るさの比。高いと白い料理が灰色に見える（<a href="ch11.html">11章</a>）。</td></tr>
-      <tr><td>パン粉 / 衣</td><td>揚げ物の表面の層。パン粉は薄い板、天ぷらの衣は泡と花として作る（<a href="ch18.html">18章</a>）。</td></tr>
-      <tr><td>ウォーカー</td><td>1歩ずつ向きを変えながら進んで線を描く仕組み。麺の芯線を作る（<a href="ch19.html">19章</a>）。</td></tr>
+      <tr><td>パン粉 / 衣</td><td>揚げ物の表面の層。パン粉は薄い板、天ぷらの衣は泡と花として作る（<a href="ch16.html">16章</a>）。</td></tr>
+      <tr><td>ウォーカー</td><td>1歩ずつ向きを変えながら進んで線を描く仕組み。麺の芯線を作る（<a href="ch17.html">17章</a>）。</td></tr>
       <tr><td>OU 過程</td><td>基準の値に引き戻されながら揺れる乱数の列。麺の曲率を「持続」させるのに使う。</td></tr>
-      <tr><td>位置ベースの緩和 / PBD</td><td>速度や力を計算せず、点の位置を条件（長さ・反発など）を満たす位置へ少しずつ直す方法（<a href="ch19.html">19章</a>）。</td></tr>
+      <tr><td>位置ベースの緩和 / PBD</td><td>速度や力を計算せず、点の位置を条件（長さ・反発など）を満たす位置へ少しずつ直す方法（<a href="ch17.html">17章</a>）。</td></tr>
       <tr><td>芯</td><td>麺の盛りの下の層を塞ぐ暗い形。見えない所を管で埋めずに済ませる。</td></tr>
-      <tr><td>最上点バッファ</td><td>真上から見て、各マスでいちばん高い面の高さと色を残した格子。汁の色と盛り付けに使う（<a href="ch20.html">20章</a>）。</td></tr>
-      <tr><td>消散係数 σ</td><td>液体の中を 1cm 進むあいだに光がどれだけ減るか。RGB で別々に持つ。単位は 1/cm（<a href="ch20.html">20章</a>）。</td></tr>
-      <tr><td>降伏応力 / ビンガム流体</td><td>ある強さより弱い力では流れない性質と、それを持つ液体。カレーのルウが水平にならない理由（<a href="ch20.html">20章</a>）。</td></tr>
-      <tr><td>高さ場</td><td>平面の各点に高さを1つずつ持たせた格子。上から見た最上点しか持たない（<a href="ch21.html">21章</a>）。</td></tr>
-      <tr><td>代理形状</td><td>当たり判定だけに使う単純な形（円柱・箱）。見た目のメッシュはその子として吊るす（<a href="ch21.html">21章</a>）。</td></tr>
+      <tr><td>最上点バッファ</td><td>真上から見て、各マスでいちばん高い面の高さと色を残した格子。汁の色と盛り付けに使う（<a href="ch18.html">18章</a>）。</td></tr>
+      <tr><td>消散係数 σ</td><td>液体の中を 1cm 進むあいだに光がどれだけ減るか。RGB で別々に持つ。単位は 1/cm（<a href="ch18.html">18章</a>）。</td></tr>
+      <tr><td>降伏応力 / ビンガム流体</td><td>ある強さより弱い力では流れない性質と、それを持つ液体。カレーのルウが水平にならない理由（<a href="ch18.html">18章</a>）。</td></tr>
+      <tr><td>高さ場</td><td>平面の各点に高さを1つずつ持たせた格子。上から見た最上点しか持たない（<a href="ch19.html">19章</a>）。</td></tr>
+      <tr><td>代理形状</td><td>当たり判定だけに使う単純な形（円柱・箱）。見た目のメッシュはその子として吊るす（<a href="ch19.html">19章</a>）。</td></tr>
     </table>
     <div class="note">
       ここに無い言葉は、たいていサンプルのコメントに説明があります。
