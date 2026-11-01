@@ -27,15 +27,13 @@
       <a href="ch10.html">10 曲がり</a>
       <a href="ch11.html">11 光</a>
       <a href="ch12.html">12 焼き色</a>
-      <a href="ch13.html">13 たれ</a>
-      <a href="ch14.html">14 透け</a>
-      <a href="ch15.html">15 粒</a>
-      <a href="ch16.html">16 潰れ</a>
-      <a href="ch17.html">17 差分</a>
-      <a href="ch18.html">18 衣</a>
-      <a href="ch19.html">19 麺</a>
-      <a href="ch20.html">20 汁</a>
-      <a href="ch21.html">21 盛る</a>
+      <a href="ch13.html">13 透け</a>
+      <a href="ch14.html">14 粒</a>
+      <a href="ch15.html">15 差分</a>
+      <a href="ch16.html">16 衣</a>
+      <a href="ch17.html">17 麺</a>
+      <a href="ch18.html">18 汁</a>
+      <a href="ch19.html">19 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -82,7 +80,7 @@ scene.enablePhysics(<span class="k">new</span> V3(<span class="n">0</span>, <spa
 //         絶対値で決まっているため、実重力だと震える。620 で安定域に入る</span>
 <span class="k">new</span> BABYLON.PhysicsAggregate(cookie, BABYLON.PhysicsShapeType.CONVEX_HULL,
     { mass: <span class="n">6</span>, friction: <span class="n">0.55</span>, restitution: <span class="n">0.04</span> }, scene);</pre>
-      <figcaption>ウィンナー.js とクッキー.js に共通の設定。単位を cm にすると重力の値まで変わる</figcaption>
+      <figcaption>ウィンナー.js と<a href="https://cx20.github.io/VirtualSweetsFactory/view.html?f=%E3%82%AF%E3%83%83%E3%82%AD%E3%83%BC.js" title="姉妹編「おかしのつくりかた」のソース">クッキー.js</a> に共通の設定。単位を cm にすると重力の値まで変わる</figcaption>
     </figure>
 
     <div class="lab" id="lab08">
@@ -125,7 +123,7 @@ scene.enablePhysics(<span class="k">new</span> V3(<span class="n">0</span>, <spa
       ウィンナー.js は<b>カプセルを何個か並べたもの</b>を当たり判定にしています。
     </p>
     <p>
-      ドーナツ.js も同じ理由でカプセル列です。凸包で包むと<b>穴が埋まって</b>しまいます。
+      <a href="https://cx20.github.io/VirtualSweetsFactory/view.html?f=%E3%83%89%E3%83%BC%E3%83%8A%E3%83%84.js" title="姉妹編「おかしのつくりかた」のソース">ドーナツ.js</a> も同じ理由でカプセル列です。凸包で包むと<b>穴が埋まって</b>しまいます。
       輪に沿ってカプセルを並べれば穴が残り、皿の上でドーナツ同士が串刺しのように重なれます。
     </p>
 

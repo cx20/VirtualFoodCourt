@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>透けないと、食べ物に見えない — たべもののつくりかた</title>
-<meta name="description" content="透けないと、食べ物に見えない">
+<title>粒を1400個置いて、谷を暗くする — たべもののつくりかた</title>
+<meta name="description" content="粒を1400個置いて、谷を暗くする">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/labs.js" defer></script>
 </head>
@@ -27,15 +27,13 @@
       <a href="ch10.html">10 曲がり</a>
       <a href="ch11.html">11 光</a>
       <a href="ch12.html">12 焼き色</a>
-      <a href="ch13.html">13 たれ</a>
-      <a href="ch14.html" aria-current="page">14 透け</a>
-      <a href="ch15.html">15 粒</a>
-      <a href="ch16.html">16 潰れ</a>
-      <a href="ch17.html">17 差分</a>
-      <a href="ch18.html">18 衣</a>
-      <a href="ch19.html">19 麺</a>
-      <a href="ch20.html">20 汁</a>
-      <a href="ch21.html">21 盛る</a>
+      <a href="ch13.html">13 透け</a>
+      <a href="ch14.html" aria-current="page">14 粒</a>
+      <a href="ch15.html">15 差分</a>
+      <a href="ch16.html">16 衣</a>
+      <a href="ch17.html">17 麺</a>
+      <a href="ch18.html">18 汁</a>
+      <a href="ch19.html">19 盛る</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -44,145 +42,148 @@
 </header>
 
 <main id="top" class="page">
-<div class="wrap" style="--ch:var(--p-sakura)">
+<div class="wrap" style="--ch:var(--p-gin)">
   <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第14章</p>
-<section class="chapter" id="ch14" style="--ch:var(--p-sakura)">
+<section class="chapter" id="ch14" style="--ch:var(--p-gin)">
   <div class="chapter-head">
-    <div class="chnum">14<small>Translucency</small></div>
+    <div class="chnum">14<small>Grains</small></div>
     <div>
-      <h2>透けないと、食べ物に見えない</h2>
-      <p class="sub">subsurface scattering — 光が中に入って散る</p>
+      <h2>粒を1400個置いて、谷を暗くする</h2>
+      <p class="sub">baked ambient occlusion — 擬似AOの焼き込み</p>
     </div>
   </div>
   <div class="body">
     <div class="recap">
       <span class="label">この章の3行まとめ</span>
       <ul>
-        <li>団子の透けを切ると<b>石膏</b>に、赤身の透けを切ると<b>赤く塗った消しゴム</b>になります。</li>
-        <li>光は表面で全部はね返るのではなく、中に入って散ってから出てきます。</li>
-        <li>薄いところほど多く抜けるので、<b>厚みの情報</b>を持たせるのが要点です。</li>
+        <li>茶碗一杯のごはんは、<b>約1400粒</b>を1粒ずつ置いて作っています。</li>
+        <li>説得力を決めるのは粒の形ではなく、<b>粒と粒のあいだの暗がり</b>です。</li>
+        <li>その暗がりは <b>SSAO では出ません</b>。配置するときに計算して焼き込みます。</li>
       </ul>
     </div>
 
     <p>
-      食べ物のほとんどは、多かれ少なかれ光を通します。
-      上新粉の生地、白玉、マグロの赤身、大根おろし、レモン、米粒、鮭の身。
-      光が表面で全部はね返るのは金属だけで、
-      食べ物では<b>いったん中に入り、何度か散らばってから、別のところから出てきます</b>。
-      これを subsurface scattering（表面下散乱、SSS）といいます。
+      ごはんを描くとき、いちばん難しいのは1粒の形ではありません。
+      1粒だけを取り出すと、どのやり方でもそれなりに見えます。
+      難しいのは<b>集まったとき</b>で、粒間の暗がりが無いと、
+      ごはんは「発泡スチロールの塊」になります。
     </p>
     <p>
-      これが見た目にどう出るかというと、<b>逆光になったときの縁</b>です。
-      光を後ろから当てると、薄い部分だけが明るく透けます。
-      団子の輪郭がふわっと白く光り、赤身の縁が赤く抜ける。
-      料理写真が斜め後ろから光を当てるのは、これを見せるためです（→ <a href="ch11.html">11章</a>）。
+      ふつう、こういう陰りは <b>SSAO</b>（画面空間アンビエントオクルージョン）という
+      後処理で付けます。ところが、ご飯.js はそれを使いません。理由がコメントに書いてあります。
     </p>
+    <div class="note">
+      <b>「SSAO が拾えるのは画面空間で隣接している面の陰りだけで、
+      ごはんの谷は深さ数ミリ・幅数ミリの密集した溝なので、
+      半径を合わせると今度は粒の輪郭が全部汚れる」</b>
+    </div>
+    <p>
+      そこで別の手を使います。粒を配置するときに、
+      <b>その粒が近傍の最高点からどれだけ沈んでいるか</b>を計算し、
+      その値をインスタンスの色として書き込む。沈んでいる粒ほど暗い色を持たせるわけです。
+      描画時のコストはゼロで、しかも粒の形に沿って正確に暗くなります。
+    </p>
+    <figure>
+<pre><span class="c">// 9. Grains : 配置と「粒間の暗がり」の焼き込み</span>
+<span class="k">const</span> hi = neighborMaxHeight(x, z);        <span class="c">// 近傍でいちばん高い粒の頭</span>
+<span class="k">const</span> sink = clamp((hi - y) / depth, <span class="n">0</span>, <span class="n">1</span>); <span class="c">// どれだけ沈んでいるか</span>
+<span class="k">const</span> k = mix(<span class="n">1.0</span>, aoFloor, sink);          <span class="c">// aoFloor = いちばん深い谷の明るさ</span>
+colors.push(k, k, k, <span class="n">1</span>);                    <span class="c">// インスタンスカラーへ</span></pre>
+      <figcaption>ご飯.js。GUI の「粒間の暗がり」スライダーは aoFloor を動かしている</figcaption>
+    </figure>
 
-    <div class="lab" id="lab14">
-      <p class="lab-title">実験 — 透けを切る / 光を後ろへ回す</p>
+    <div class="lab" id="lab15">
+      <p class="lab-title">実験 — 粒間の暗がりを、切る / 入れる</p>
       <div class="lab-cols side">
         <div class="controls">
-          <div class="chips" id="sssPreset">
-            <button class="chip" type="button" data-v="dango" aria-pressed="true">白玉</button>
-            <button class="chip" type="button" data-v="akami">赤身</button>
-            <button class="chip" type="button" data-v="rice">米粒</button>
+          <div class="ctrl">
+            <label for="grainN">粒の数<span class="v" id="grainNV">420</span></label>
+            <input type="range" id="grainN" min="60" max="900" step="20" value="420">
           </div>
           <div class="ctrl">
-            <label for="sssAmt">透けの強さ<span class="v" id="sssAmtV">0.45</span></label>
-            <input type="range" id="sssAmt" min="0" max="1" step="0.01" value="0.45">
+            <label for="grainAo">いちばん深い谷の明るさ<span class="v" id="grainAoV">0.52</span></label>
+            <input type="range" id="grainAo" min="0.1" max="1" step="0.01" value="0.52">
           </div>
           <div class="ctrl">
-            <label for="sssBack">光の向き（逆光へ）<span class="v" id="sssBackV">40°</span></label>
-            <input type="range" id="sssBack" min="-30" max="160" step="1" value="40">
+            <label for="grainDepth">暗がりの届く深さ<span class="v" id="grainDepthV">0.55</span></label>
+            <input type="range" id="grainDepth" min="0.1" max="1.5" step="0.01" value="0.55">
           </div>
-          <div class="readout" id="sssOut">—</div>
+          <div class="readout" id="grainOut">—</div>
         </div>
-        <canvas id="sssCanvas" width="640" height="360" aria-label="透けの強さと光の向きを変える実験"></canvas>
+        <canvas id="grainCanvas" width="640" height="360" aria-label="米粒の集まりと粒間の暗がりの実験"></canvas>
       </div>
       <p class="hint">
-        透けを 0 にすると、光をどこから当てても縁が抜けません。
-        白玉が石膏に、赤身が消しゴムに見えるのはそのためです。<br><b>立体はドラッグで回せます</b>（触ると自動回転は止まります。ダブルクリックで戻ります）。
-        光を後ろへ回してから立体も回すと、抜けて見える向きが探せます。
+        谷の明るさを 1.0 にすると暗がりが消えます。粒の形も数も同じなのに、
+        急にごはんに見えなくなるのが分かります。
       </p>
     </div>
 
-    <h3>厚みを、どうやって知るか</h3>
+    <h3>近傍の「最高点」を使う理由</h3>
     <p>
-      「薄いところほど透ける」を実装するには、その点の<b>厚み</b>が必要です。
-      ところが3Dの表面には厚みの情報がありません。そこで、あらかじめ計算して
-      テクスチャに焼いておきます。これを thickness テクスチャといいます。
-    </p>
-    <figure>
-<pre><span class="c">// 3. TextureLab : 厚みを焼く（ご飯.js の米粒）
-// 米粒は中心が厚く、縁と両端が薄い。単純な形なら式で書ける</span>
-<span class="k">const</span> th = Math.sqrt(Math.max(<span class="n">0</span>, <span class="n">1</span> - rr)) * (<span class="n">1</span> - <span class="n">0.35</span> * endFade);
-mat.subSurface.thicknessTexture = bake(th);
-mat.subSurface.isTranslucencyEnabled = <span class="k">true</span>;
-mat.subSurface.translucencyIntensity = <span class="n">0.45</span>;</pre>
-      <figcaption>形が複雑な場合は、内側へレイを飛ばして距離を測る方法もある</figcaption>
-    </figure>
-
-    <h3>散る色は、素の色とは違う</h3>
-    <p>
-      中を通ってきた光は、素の色そのままでは出てきません。
-      赤身なら、より赤く、より暗く。白玉なら、わずかに黄味を帯びて。
-      だから SSS には、アルベドとは別に<b>散乱の色（tint）</b>を持たせます。
-    </p>
-    <p>
-      お寿司.js の赤身は、この色を <code>[0.560, 0.088, 0.098]</code>（深い深紅）に取っています。
-      表面の色より濃い。「光を通すと明るくなる」のではなく、
-      <b>光を通すと、その材質の色が濃く出る</b>のが正しい方向です。
+      沈み具合を測るとき、近傍の<b>平均</b>の高さと比べるとうまくいきません。
+      ご飯.js のコメントに「最高点と同じ高さになり、暗がりがまったく出ない」という
+      注意が残っています。平均と比べると、山の粒も谷の粒も同じくらいの差になってしまうからです。
+      比べる相手は<b>いちばん高い粒</b>でなければいけません。
     </p>
 
-    <h3>切り身は「表面」ではなく「切り口」</h3>
+    <h3>握ると、沈み込みが浅くなる</h3>
     <p>
-      お寿司.js のコメントに、この章と関係の深い一節があります。
+      お寿司.js は、ご飯.js の米粒・マテリアル・暗がりの焼き込みを<b>そのまま流用</b>しています。
+      変わるのは盛りの形（茶碗の山 → 俵）だけ……ではありません。
+      酢飯は握って締めるので、<b>粒の沈み込みが浅くなります</b>。
+      同じ仕組みのまま、パラメータ1つで「ふんわり」と「締まっている」を作り分けています。
+      この考え方は<a href="ch15.html">15章</a>につながります。
     </p>
-    <div class="note">
-      <b>「見えているのは『表面』ではなく『包丁で切った断面』。
-      模様は表面の汚れではなく、筋肉の束と脂の層が切られた切り口」</b>
-    </div>
+
+    <h3>チャーハンは、黄色いごはんではない</h3>
     <p>
-      野菜の皮や、たこ焼きの生地は<b>外側</b>です。ところが刺身や鮭の切り身は、
-      内部構造がむき出しになっています。だから模様の作り方が変わります。
-      筋肉の束（筋節）が斜めに走る場を作り、それを切った断面を模様にする。
-      鮭の白い筋（ミオコンマ）が「く」の字に並ぶのは、そのためです。
-      ロールケーキ.js も同じ考え方で、断面の渦巻きを「線」ではなく、生地とクリームを巻いた「シート」の切り口として作っています。
-      渦の形は1つの断面関数にまとめ、テクスチャと形状の両方がそれを引きます。
+      チャーハン.js は、ご飯.js の米粒をもとにしています。ところが、米粒をそのまま黄色く塗っても
+      「色を塗った白飯」にしかなりません。参考写真を拡大して数えると、違いは3つにまとまりました。
+    </p>
+    <ul>
+      <li><b>一粒ずつ色が違う。</b>白いまま残った粒、卵をまとった黄色い粒、醤油がついた褐色の粒が隣り合っている。
+      ただし完全なランダムではなく、数cm 単位でまとまっている（空間ノイズ 6割 + 粒ごとの乱数 4割）</li>
+      <li><b>粒の向きが揃わない。</b>炊いたごはんは盛りの面に沿って寝るが、炒めた飯は油ではがれて勝手な向きを向く。
+      ご飯.js の「面の法線に揃えてから ±0.26rad」をやめ、完全な乱数からごく弱く水平へ引き戻す（傾き σ = 0.95rad）</li>
+      <li><b>粒と粒のあいだに隙間がある。</b>ごはんは「谷が浅くて白い」、チャーハンは「谷が深くて暗い」</li>
+    </ul>
+    <p>
+      上の実験で谷の明るさを下げると、3つ目の「谷が深くて暗い」がどういう見え方か確かめられます。
+      平均の色が合っていても、<b>粒ごとの分散</b>が無いと、絵はただの黄色い塊になります。
+    </p>
+
+    <h3>1400 という数</h3>
+    <p>
+      茶碗一杯は実際には数千粒あります。1400 は、見た目が破綻しない下限として選ばれた数です。
+      表面から見えない粒は置かないので、実際には「表面から2〜3層ぶん」だけ配置しています。
+      中身は<b>盛りの形（Mound）</b>という1枚の曲面で塞いであり、粒はその上に生えています。
     </p>
     <div class="trap">
       <span class="label">つまずきポイント</span>
-      <p><b>霜降りは色ではなく実体です。</b>
-      アルベドに白い線を描いただけだと、印刷したステッカーになります。
-      脂は肉より白く、やわらかく、<b>わずかに盛り上がって光る</b>。
-      法線と粗さも一緒に変えないと霜降りになりません。</p>
-      <p><b>透けを強くしすぎると、光る風船になります。</b>
-      subSurface は「ぼんやり光る」ので、上げるほど良く見えがちです。
-      最初の14本の値は、身のあるもので 0.4〜0.7（赤身 0.55 / 中トロ 0.62 / 大トロ 0.70、
-      団子は白玉 0.52 / 桜 0.55 / 白 0.62、ご飯 0.45）。削り節やひれのように「透けて当然」の薄いものでも 0.85 止まりで、
-      1.0 に近い値はどこにもありません。</p>
-      <p><b>translucency は「透けを足す強さ」ではありません。</b>
-      カレー.js の修正記録：「Babylon 8 系のこの値は『透けを足す強さ』ではなく拡散反射との配分比で、
-      diffuse *= (1 - t) が掛かる。拡散の4割を捨てていた」。
-      米粒の translucency を 0.40 にしていたので、ライスがそのぶん暗く沈んでいました（0.26 に直しています）。
-      チャーハン.js は、炒めて水が飛んだ米は炊きたてより透けないとして、さらに 0.16 まで下げています。</p>
+      <p><b>粒をランダムに置くだけでは、ごはんになりません。</b>
+      向きが完全にばらばらだと「もみ殻の山」に見えます。
+      実物は表面に沿って寝ている粒が多い。盛りの曲面の法線を使って、
+      粒の向きをある程度そちらへ倒しています。</p>
+      <p><b>インスタンスカラーは、ライティングの前に掛かります。</b>
+      焼き込んだ暗さは「その粒に届く光の量」を表しているので、
+      アルベドに掛けるのが正しい。あとから画面全体を暗くするのとは意味が違います。</p>
     </div>
 
     <div class="try">
       <span class="label">やってみよう</span>
       <ol>
-        <li>「白玉」で透けを 0 にして、何に見えるか言葉にする。</li>
-        <li>光の向きを 160°（真後ろ）にして、透けの有無を見比べる。</li>
-        <li>「赤身」で透けを 1.0 にすると、どこから食べ物でなくなるか探す。</li>
-        <li>お寿司.js で「透」を検索し、赤身・中トロ・大トロで値がどう違うか比べる。</li>
+        <li>谷の明るさを 1.0 にして、ごはんが何に見えるか判定する。</li>
+        <li>粒の数を 60 まで減らして、どこから「ごはん」でなくなるか探す。</li>
+        <li>暗がりの届く深さを 1.5 にして、暗すぎるとどうなるか見る。</li>
+        <li>ご飯.js の GUI で「粒間の暗がり」を 0 にした画面と見比べる。</li>
       </ol>
     </div>
 
   </div>
 </section>
   <div class="pager">
-    <a class="prev" href="ch13.html"><span class="dir">← まえの章</span><span class="ttl">13 たれは、色ではなく層</span></a>
-    <a class="next" href="ch15.html"><span class="dir">つぎの章 →</span><span class="ttl">15 粒を1400個置いて、谷を暗くする</span></a>
+    <a class="prev" href="ch13.html"><span class="dir">← まえの章</span><span class="ttl">13 透けないと、食べ物に見えない</span></a>
+    <a class="next" href="ch15.html"><span class="dir">つぎの章 →</span><span class="ttl">15 「似ているのに別物」を作り分ける</span></a>
   </div>
 </div>
 </main>
