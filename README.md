@@ -21,6 +21,58 @@
 
 ---
 
+## 作った料理
+
+ぜんぶコードだけで作っています（画像は `tools/shoot.js` でサンプルを実際に動かして撮ったもの）。
+画像を押すとサイト上でその場で動き、名前を押すとソースが開きます。
+
+<table>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=トースト.js"><img src="assets/thumbs/トースト.jpg" alt="トースト" width="160"></a><br><a href="samples/トースト.js">トースト</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=エッグトースト.js"><img src="assets/thumbs/エッグトースト.jpg" alt="エッグトースト" width="160"></a><br><a href="samples/エッグトースト.js">エッグトースト</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=フランスパン.js"><img src="assets/thumbs/フランスパン.jpg" alt="フランスパン" width="160"></a><br><a href="samples/フランスパン.js">フランスパン</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=ハンバーガー.js"><img src="assets/thumbs/ハンバーガー.jpg" alt="ハンバーガー" width="160"></a><br><a href="samples/ハンバーガー.js">ハンバーガー</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=たこ焼き.js"><img src="assets/thumbs/たこ焼き.jpg" alt="たこ焼き" width="160"></a><br><a href="samples/たこ焼き.js">たこ焼き</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=餃子.js"><img src="assets/thumbs/餃子.jpg" alt="餃子" width="160"></a><br><a href="samples/餃子.js">餃子</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=唐揚げ.js"><img src="assets/thumbs/唐揚げ.jpg" alt="唐揚げ" width="160"></a><br><a href="samples/唐揚げ.js">唐揚げ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=とんかつ.js"><img src="assets/thumbs/とんかつ.jpg" alt="とんかつ" width="160"></a><br><a href="samples/とんかつ.js">とんかつ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=エビフライ.js"><img src="assets/thumbs/エビフライ.jpg" alt="エビフライ" width="160"></a><br><a href="samples/エビフライ.js">エビフライ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=コロッケ.js"><img src="assets/thumbs/コロッケ.jpg" alt="コロッケ" width="160"></a><br><a href="samples/コロッケ.js">コロッケ</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=天ぷら.js"><img src="assets/thumbs/天ぷら.jpg" alt="天ぷら" width="160"></a><br><a href="samples/天ぷら.js">天ぷら</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=ウィンナー.js"><img src="assets/thumbs/ウィンナー.jpg" alt="ウィンナー" width="160"></a><br><a href="samples/ウィンナー.js">ウィンナー</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=生姜焼き.js"><img src="assets/thumbs/生姜焼き.jpg" alt="生姜焼き" width="160"></a><br><a href="samples/生姜焼き.js">生姜焼き</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=焼き魚（サンマ）.js"><img src="assets/thumbs/焼き魚（サンマ）.jpg" alt="焼き魚（サンマ）" width="160"></a><br><a href="samples/焼き魚（サンマ）.js">焼き魚（サンマ）</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=焼き魚（鮭）.js"><img src="assets/thumbs/焼き魚（鮭）.jpg" alt="焼き魚（鮭）" width="160"></a><br><a href="samples/焼き魚（鮭）.js">焼き魚（鮭）</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=ご飯.js"><img src="assets/thumbs/ご飯.jpg" alt="ご飯" width="160"></a><br><a href="samples/ご飯.js">ご飯</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=お寿司.js"><img src="assets/thumbs/お寿司.jpg" alt="お寿司" width="160"></a><br><a href="samples/お寿司.js">お寿司</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=チャーハン.js"><img src="assets/thumbs/チャーハン.jpg" alt="チャーハン" width="160"></a><br><a href="samples/チャーハン.js">チャーハン</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=カレー.js"><img src="assets/thumbs/カレー.jpg" alt="カレー" width="160"></a><br><a href="samples/カレー.js">カレー</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=牛丼.js"><img src="assets/thumbs/牛丼.jpg" alt="牛丼" width="160"></a><br><a href="samples/牛丼.js">牛丼</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=お味噌汁.js"><img src="assets/thumbs/お味噌汁.jpg" alt="お味噌汁" width="160"></a><br><a href="samples/お味噌汁.js">お味噌汁</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=おでん.js"><img src="assets/thumbs/おでん.jpg" alt="おでん" width="160"></a><br><a href="samples/おでん.js">おでん</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=肉じゃが.js"><img src="assets/thumbs/肉じゃが.jpg" alt="肉じゃが" width="160"></a><br><a href="samples/肉じゃが.js">肉じゃが</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=うどん.js"><img src="assets/thumbs/うどん.jpg" alt="うどん" width="160"></a><br><a href="samples/うどん.js">うどん</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=そば.js"><img src="assets/thumbs/そば.jpg" alt="そば" width="160"></a><br><a href="samples/そば.js">そば</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=ラーメン.js"><img src="assets/thumbs/ラーメン.jpg" alt="ラーメン" width="160"></a><br><a href="samples/ラーメン.js">ラーメン</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=スパゲッティ（ナポリタン）.js"><img src="assets/thumbs/スパゲッティ（ナポリタン）.jpg" alt="スパゲッティ（ナポリタン）" width="160"></a><br><a href="samples/スパゲッティ（ナポリタン）.js">スパゲッティ（ナポリタン）</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=スパゲッティ（トマトソース）.js"><img src="assets/thumbs/スパゲッティ（トマトソース）.jpg" alt="スパゲッティ（トマトソース）" width="160"></a><br><a href="samples/スパゲッティ（トマトソース）.js">スパゲッティ（トマトソース）</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=スパゲッティ（カルボナーラ）.js"><img src="assets/thumbs/スパゲッティ（カルボナーラ）.jpg" alt="スパゲッティ（カルボナーラ）" width="160"></a><br><a href="samples/スパゲッティ（カルボナーラ）.js">スパゲッティ（カルボナーラ）</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=焼きそば.js"><img src="assets/thumbs/焼きそば.jpg" alt="焼きそば" width="160"></a><br><a href="samples/焼きそば.js">焼きそば</a></td>
+  </tr>
+</table>
+
+---
+
 ## まず動かす
 
 サンプルは [Babylon.js Playground](https://playground.babylonjs.com/) 用の形になっています。
