@@ -56,7 +56,7 @@
     <div class="recap">
       <span class="label">この章の3行まとめ</span>
       <ul>
-        <li>全30本とも <code>Math.random()</code> を使っていません。代わりに<b>自分で乱数を書いて</b>います。</li>
+        <li>全33本とも <code>Math.random()</code> を使っていません。代わりに<b>自分で乱数を書いて</b>います。</li>
         <li>「種（シード）」という整数をひとつ渡すと、<b>何度実行しても同じ並びの数</b>が出てきます。</li>
         <li>同じ形が二度と作れないと、直すことも、比べることもできないからです。</li>
       </ul>
@@ -84,7 +84,7 @@
         <span class="k">return</span> ((t ^ (t &gt;&gt;&gt; <span class="n">14</span>)) &gt;&gt;&gt; <span class="n">0</span>) / <span class="n">4294967296</span>;
     };
 };</pre>
-      <figcaption>30本すべてに、ほぼこの形で入っている。名前は mulberry32</figcaption>
+      <figcaption>33本すべてに、ほぼこの形で入っている。名前は mulberry32</figcaption>
     </figure>
     <p>
       中身は「かき混ぜて、上の桁と下の桁をぶつけて、また混ぜる」だけです。
