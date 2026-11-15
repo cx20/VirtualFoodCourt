@@ -3,7 +3,7 @@
 コードで料理をつくる技術ノート — [Babylon.js](https://www.babylonjs.com/) による手続き的モデリングの学習サイト。
 
 3Dモデルファイルも写真も **1枚も読み込みません**。点の座標を計算で並べ、焼き色をその場で1ピクセルずつ描き、
-たれの濃さを「厚み × 吸収係数」から解く。そうやって作った料理 30 本のサンプルと、
+たれの濃さを「厚み × 吸収係数」から解く。そうやって作った料理 33 本のサンプルと、
 それを中学生・高校生向けにほどいた全 20 章の解説で構成しています。
 
 必要な数学は sin・cos、座標、比例、指数関数（`exp`）、それに少しのベクトル（内積・外積）。
@@ -69,6 +69,11 @@
     <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=スパゲッティ（カルボナーラ）.js"><img src="assets/thumbs/スパゲッティ（カルボナーラ）.jpg" alt="スパゲッティ（カルボナーラ）" width="160"></a><br><a href="samples/スパゲッティ（カルボナーラ）.js">スパゲッティ（カルボナーラ）</a></td>
     <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=焼きそば.js"><img src="assets/thumbs/焼きそば.jpg" alt="焼きそば" width="160"></a><br><a href="samples/焼きそば.js">焼きそば</a></td>
   </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=おにぎり.js"><img src="assets/thumbs/おにぎり.jpg" alt="おにぎり" width="160"></a><br><a href="samples/おにぎり.js">おにぎり</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=だし巻き卵.js"><img src="assets/thumbs/だし巻き卵.jpg" alt="だし巻き卵" width="160"></a><br><a href="samples/だし巻き卵.js">だし巻き卵</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualFoodCourt/play.html?f=照り焼きチキン.js"><img src="assets/thumbs/照り焼きチキン.jpg" alt="照り焼きチキン" width="160"></a><br><a href="samples/照り焼きチキン.js">照り焼きチキン</a></td>
+  </tr>
 </table>
 
 ---
@@ -107,13 +112,13 @@ npx serve .                  # 任意の静的サーバでよい
 ├── index.html               目次（トップページ）
 ├── start.html               00 まず動かしてみる
 ├── ch01.html … ch19.html    第I部（01〜11）／第II部（12〜15）／第III部（16〜19）の解説ページ
-├── zukan.html               図鑑（30本の一覧。サムネイルから実行できる）
+├── zukan.html               図鑑（33本の一覧。サムネイルから実行できる）
 ├── view.html                ソースビューア
 ├── play.html                サンプルをその場で実行するページ
 ├── terms.html               用語集
 ├── LICENSE                  MIT License
 │
-├── samples/                 ★ サンプル 30 本（Babylon.js Playground 用の .js）
+├── samples/                 ★ サンプル 33 本（Babylon.js Playground 用の .js）
 │
 ├── assets/
 │   ├── site.css             サイト全体のスタイル          （手書き）
@@ -128,7 +133,7 @@ npx serve .                  # 任意の静的サーバでよい
     ├── pages-2.js           第II部（12〜15章）の本文
     ├── pages-3.js           第III部（16〜19章）の本文
     ├── shoot.js             サンプルを実際に動かしてサムネイルを撮影
-    └── verify-play.js       play.html で 30 本が本当に動くかの確認
+    └── verify-play.js       play.html で 33 本が本当に動くかの確認
 ```
 
 > **注意**: ルートの `*.html` は `tools/build.js` が**まるごと上書き**します。
@@ -161,7 +166,7 @@ sRGB 0-1 → 16進に直したものです。出典をコメントに残して�
 
 ---
 
-## サンプル 30 本
+## サンプル 33 本
 
 `samples/` 以下。同じ枠組みで書かれていますが、担当する「難所」が 1 本ずつ違います。
 最初の 14 本に、定食屋・麺屋・洋食屋の料理が加わりました。甘いものは姉妹編
@@ -188,7 +193,7 @@ sRGB 0-1 → 16進に直したものです。出典をコメントに残して�
 | [コロッケ.js](samples/コロッケ.js) | エビフライのパン粉を流用。小判型と割った断面を同じ関数で作る |
 | [天ぷら.js](samples/天ぷら.js) | 衣の厚みと「花」。厚い所ほど白く、パン粉とは揚げ色の向きが逆 |
 
-### 肉・魚
+### 肉・魚・卵
 
 | ファイル | そこでしか出てこない技術 |
 | --- | --- |
@@ -196,6 +201,8 @@ sRGB 0-1 → 16進に直したものです。出典をコメントに残して�
 | [生姜焼き.js](samples/生姜焼き.js) | しわの寄った薄切り肉に厚みを付け、たれの膜を Beer–Lambert で焼く |
 | [焼き魚（サンマ）.js](samples/焼き魚（サンマ）.js) | 実写に寄せた10項目の修正がそのまま残る。銀は metallic ではなく虹彩（薄膜干渉） |
 | [焼き魚（鮭）.js](samples/焼き魚（鮭）.js) | 切り身。筋節の場を作って断面に出す。皮まで含めて1メッシュ |
+| [照り焼きチキン.js](samples/照り焼きチキン.js) | 水ぶくれの谷にたれを溜め、皮・側面・切り口で照りと焼き色を描き分ける |
+| [だし巻き卵.js](samples/だし巻き卵.js) | 巻いた断面の渦と長い空洞。だしの艶、鍋の焼き目、巻きすの痕を作り分ける |
 
 ### ご飯もの
 
@@ -203,6 +210,7 @@ sRGB 0-1 → 16進に直したものです。出典をコメントに残して�
 | --- | --- |
 | [ご飯.js](samples/ご飯.js) | 約1400粒を1粒ずつ置く。粒間の暗がりを配置時に焼き込む。白が灰色に見える原因は照明比 |
 | [お寿司.js](samples/お寿司.js) | ご飯.js の続き。ネタは表面ではなく包丁の切り口。霜降りは色ではなく実体 |
+| [おにぎり.js](samples/おにぎり.js) | ご飯.js・お寿司.js の米粒を流用。ふくらんだ角丸三角形と、米に沿う海苔を作る |
 | [チャーハン.js](samples/チャーハン.js) | 粒ごとの色の分散・向きの乱れ・粒間の隙間。黄色く塗った白飯にしない |
 | [カレー.js](samples/カレー.js) | ルウは降伏応力流体。縁の土手を √ の式で作り、ルウ面を max の1本の式で出す |
 | [牛丼.js](samples/牛丼.js) | 肉の濃さは肉の色ではなく、琥珀色のつゆの膜が作る |
@@ -244,7 +252,7 @@ sRGB 0-1 → 16進に直したものです。出典をコメントに残して�
 
 | | 章 | 内容 |
 | --- | --- | --- |
-| 00 | まず動かしてみる | インストールなし。ブラウザだけで30本を動かす手順 |
+| 00 | まず動かしてみる | インストールなし。ブラウザだけで33本を動かす手順 |
 | 01 | 手続き生成 | モデルも写真も読み込まず、実行した瞬間に座標と模様を計算で作る |
 | 02 | 乱数 | `Math.random()` を使わない理由。種を渡すと毎回同じ結果になる乱数を書く |
 | 03 | ノイズ | となり合う値がなめらかにつながる乱数。重ねると焼きムラや生地の肌理になる |
@@ -287,7 +295,7 @@ sRGB 0-1 → 16進に直したものです。出典をコメントに残して�
 ## サムネイルの収録
 
 ```sh
-node tools/shoot.js            # 30本ぜんぶ
+node tools/shoot.js            # 33本ぜんぶ
 node tools/shoot.js トースト   # 名前で絞り込み（部分一致）
 ```
 
@@ -309,7 +317,7 @@ node tools/shoot.js トースト   # 名前で絞り込み（部分一致）
 ## 動作確認
 
 ```sh
-node tools/verify-play.js      # play.html で 30 本が本当に動くか
+node tools/verify-play.js      # play.html で 33 本が本当に動くか
 ```
 
 SSAO2 を使うサンプル（牛丼・生姜焼き・フランスパン）は SwiftShader だと1枚に数秒かかり、
