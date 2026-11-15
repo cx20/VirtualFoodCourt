@@ -17,6 +17,8 @@
 **[おかしのつくりかた（VirtualSweetsFactory）](https://github.com/cx20/VirtualSweetsFactory)** に移しました。
 たれを厚みから解く話と、やわらかい物が触れ合って潰れる話も、そちらの第II部にあります。
 
+3 つの関係は [姉妹リポジトリ](#姉妹リポジトリ) にまとめてあります。
+
 ---
 
 ## まず動かす
@@ -57,6 +59,7 @@ npx serve .                  # 任意の静的サーバでよい
 ├── view.html                ソースビューア
 ├── play.html                サンプルをその場で実行するページ
 ├── terms.html               用語集
+├── LICENSE                  MIT License
 │
 ├── samples/                 ★ サンプル 30 本（Babylon.js Playground 用の .js）
 │
@@ -266,3 +269,24 @@ VERIFY_FRAME_WAIT=30000 node tools/verify-play.js 牛丼
 
 `play.html` を実際に開いて、`createScene()` が値を返し、描画ループが回り、
 ページ内にエラーが出ていないことを確かめます。
+
+---
+
+## 姉妹リポジトリ
+
+同じ Babylon.js による手続き的モデリングを、題材を変えて解説しています。
+
+| サイト | リポジトリ | 内容 |
+| --- | --- | --- |
+| [やさいのつくりかた](https://cx20.github.io/VirtualVegetablePlant/) | [VirtualVegetablePlant](https://github.com/cx20/VirtualVegetablePlant) | 野菜・果物・きのこの形や表面の模様を、計算とコードで作る方法を解説します。 |
+| [たべもののつくりかた](https://cx20.github.io/VirtualFoodCourt/) | [VirtualFoodCourt](https://github.com/cx20/VirtualFoodCourt)（このリポジトリ） | 料理を題材に、形に加えて焼き色や透け、衣・麺・汁、盛り付けなどの表現を解説します。 |
+| [おかしのつくりかた](https://cx20.github.io/VirtualSweetsFactory/) | [VirtualSweetsFactory](https://github.com/cx20/VirtualSweetsFactory) | お菓子を題材に、型で抜く、焼く、たれを掛けるといった工程や、やわらかい物が触れ合って変形する表現を解説します。 |
+
+---
+
+## ライセンス
+
+[MIT License](LICENSE) です。サンプルのコード、解説ページ、サムネイル画像を含む、このリポジトリの内容すべてに適用されます。
+
+実行時に CDN から読み込む Babylon.js（Apache License 2.0）と Havok Physics（MIT License）は、
+このリポジトリには含まれていません。それぞれのライセンスに従います。
